@@ -1,0 +1,75 @@
+name: Deploy Client (SSH)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    paths:
+      - 'client/**'
+      - 'shared/**'
+      - '.github/workflows/deploy-client.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-client:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, '#deploy') || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # --- BUILD SHARED (dependency) ---
+      - name: Build Shared
+        run: |
+          npm ci
+          npm run build:shared
+
+      # --- BUILD CLIENT (Next.js Static Export) ---
+      - name: Build Client
+        env:
+          NEXT_PUBLIC_API_URL: ""
+        run: |
+          cd client
+          npm run build
+
+          # Create deployment package
+          mkdir -p ../deploy/client
+
+          # Next.js static export outputs to 'out/' directory
+          cp -r out/* ../deploy/client/
+
+          # Copy web.config for IIS
+          cp web.config ../deploy/client/
+
+      # --- DEPLOY VIA SSH/SCP ---
+      - name: Install SSHPASS
+        run: sudo apt-get install -y sshpass
+
+      - name: Deploy Client to IIS
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PASS: ${{ secrets.SSH_PASSWORD }}
+          REMOTE_WWW_DIR: "C:/Users/cemilal/cemil.al/www/invinomorte"
+        run: |
+          echo "Creating remote directory if not exists..."
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "powershell -Command \"New-Item -ItemType Directory -Force -Path '$REMOTE_WWW_DIR'\""
+
+          echo "Uploading Client Files..."
+          sshpass -p "$SSH_PASS" scp -r -o StrictHostKeyChecking=no deploy/client/* $SSH_USER@$SSH_HOST:$REMOTE_WWW_DIR/
+
+          echo "Configuring IIS..."
+          # Enable Proxy in IIS ARR
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "powershell -Command \"Set-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -filter 'system.webServer/proxy' -name 'enabled' -value 'True'\"" || echo "Proxy enable warning"
+
+          # Enable WebSocket Protocol
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "powershell -Command \"Install-WindowsFeature -Name Web-WebSockets\"" || echo "WebSocket install warning"
+
+          echo "Restarting IIS..."
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "powershell -Command \"Restart-Service W3SVC -Force\"" || echo "IIS Restart warning"
+
+          echo "Client deployment complete!"

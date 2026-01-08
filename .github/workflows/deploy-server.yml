@@ -1,0 +1,110 @@
+name: Deploy Server (SSH)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    paths:
+      - 'server/**'
+      - 'shared/**'
+      - '.github/workflows/deploy-server.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-server:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, '#deploy') || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # --- BUILD SERVER ---
+      - name: Build Server
+        run: |
+          # Install all dependencies (workspaces)
+          npm ci
+
+          # Build shared first (server depends on it)
+          npm run build:shared
+
+          # Build server
+          npm run build:server
+
+          # Create deployment package
+          mkdir -p deploy/server
+
+          # Copy compiled server code
+          cp -r server/dist deploy/server/
+          cp server/package.json deploy/server/
+
+          # Copy shared as a local dependency
+          mkdir -p deploy/server/shared
+          cp -r shared/dist deploy/server/shared/
+          cp shared/package.json deploy/server/shared/
+
+          # Create a production package.json that references local shared
+          cat > deploy/server/package.json << 'EOF'
+          {
+            "name": "@in-vino-morte/server",
+            "version": "1.0.0",
+            "private": true,
+            "main": "dist/index.js",
+            "scripts": {
+              "start": "node dist/index.js"
+            },
+            "dependencies": {
+              "@in-vino-morte/shared": "file:./shared",
+              "cors": "^2.8.5",
+              "express": "^4.18.2",
+              "uuid": "^9.0.1",
+              "ws": "^8.16.0",
+              "zod": "^3.22.4"
+            }
+          }
+          EOF
+
+      # --- DEPLOY VIA SSH/SCP ---
+      - name: Install SSHPASS
+        run: sudo apt-get install -y sshpass
+
+      - name: Deploy Server with PM2
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PASS: ${{ secrets.SSH_PASSWORD }}
+          REMOTE_SERVER_DIR: "C:/Users/cemilal/cemil.al/www/invinomorte/server"
+          PM2_APP_NAME: "invinomorte-server"
+          SERVER_PORT: "3001"
+        run: |
+          echo "Creating remote directory..."
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "powershell -Command \"New-Item -ItemType Directory -Force -Path '$REMOTE_SERVER_DIR'\""
+
+          echo "Stopping existing PM2 process (if running)..."
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "pm2 stop $PM2_APP_NAME 2>nul || echo 'No existing process'"
+
+          echo "Cleaning old deployment..."
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "powershell -Command \"Remove-Item -Path '$REMOTE_SERVER_DIR/*' -Recurse -Force -ErrorAction SilentlyContinue\""
+
+          echo "Uploading Server Files..."
+          sshpass -p "$SSH_PASS" scp -r -o StrictHostKeyChecking=no deploy/server/* $SSH_USER@$SSH_HOST:$REMOTE_SERVER_DIR/
+
+          echo "Installing production dependencies..."
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "cd $REMOTE_SERVER_DIR && npm install --production"
+
+          echo "Starting server with PM2..."
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "cd $REMOTE_SERVER_DIR && pm2 start dist/index.js --name $PM2_APP_NAME --env PORT=$SERVER_PORT"
+
+          echo "Saving PM2 process list..."
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "pm2 save"
+
+          echo "=== DEPLOYMENT STATUS ==="
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "pm2 status"
+
+          echo "=== SERVER LOGS (last 20 lines) ==="
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "pm2 logs $PM2_APP_NAME --lines 20 --nostream" || echo "Logs not available yet"
+
+          echo "Server deployment complete!"

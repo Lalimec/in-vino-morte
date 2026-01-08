@@ -1,0 +1,1508 @@
+.main {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+    padding: var(--space-md);
+    padding-top: calc(var(--safe-top) + var(--space-md));
+    /* Account for fixed action area at bottom */
+    padding-bottom: calc(var(--safe-bottom) + 160px);
+    overflow: hidden;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
+    /* Add left padding to avoid overlap with exit button (36px button + space-sm gap + extra breathing room) */
+    padding-left: calc(36px + var(--space-sm) + var(--space-md));
+    z-index: var(--z-overlay);
+}
+
+.phaseBanner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.phaseLabel {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--color-gold);
+    letter-spacing: 0.02em;
+}
+
+.timerRing {
+    position: relative;
+    width: 40px;
+    height: 40px;
+}
+
+.timerRing svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.timerTrack {
+    fill: none;
+    stroke: var(--color-bg-tertiary);
+    stroke-width: 6;
+}
+
+.timerProgress {
+    fill: none;
+    stroke: var(--color-gold);
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.1s linear;
+}
+
+.timerText {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.roundInfo {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    padding: var(--space-xs) var(--space-md);
+    /* Glass styling */
+    background: rgba(45, 15, 30, 0.6);
+    border: 1px solid rgba(139, 34, 82, 0.3);
+    border-radius: var(--radius-full);
+    box-shadow: var(--glass-inset-top);
+}
+
+/* Table Container */
+.tableContainer {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-md);
+}
+
+.table {
+    position: relative;
+    width: min(90vw, 400px);
+    aspect-ratio: 1;
+    /* Glass table - matching Liquid Glass system */
+    background: linear-gradient(135deg, var(--glass-bg-medium) 0%, var(--glass-bg-dark) 100%);
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow-lg), var(--glass-shadow-glow-wine), var(--glass-inset-top), var(--glass-inset-bottom);
+}
+
+.tableCenter {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Glass center */
+    background: linear-gradient(135deg, var(--glass-bg-medium) 0%, var(--glass-bg-dark) 100%);
+    border-radius: 50%;
+    border: 1px solid rgba(139, 34, 82, 0.5);
+    box-shadow: var(--glass-inset-top);
+}
+
+.tableLogo {
+    font-size: 2rem;
+    opacity: 0.5;
+}
+
+/* Seats */
+.seat {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease-smooth);
+}
+
+.seat:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+}
+
+.seatYou {
+    z-index: 2;
+}
+
+/* Active player - significantly larger avatar to show whose turn it is */
+.seatActive {
+    z-index: 10;
+}
+
+.seatActive .avatar {
+    width: 76px;
+    height: 76px;
+    font-size: 2.25rem;
+    animation: activePlayerPulse 1.2s infinite;
+    border-width: 3px;
+    border-color: var(--color-gold);
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.6), var(--glass-shadow-glow-gold), var(--glass-inset-top);
+}
+
+/* Thinking indicator for active player */
+.seatActive::after {
+    content: '🤔';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.5rem;
+    animation: thinkingBounce 1s ease-in-out infinite;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7));
+}
+
+@keyframes activePlayerPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 25px rgba(212, 175, 55, 0.5), var(--glass-inset-top);
+    }
+    50% {
+        transform: scale(1.08);
+        box-shadow: 0 0 40px rgba(212, 175, 55, 0.8), var(--glass-inset-top);
+    }
+}
+
+@keyframes thinkingBounce {
+    0%, 100% {
+        transform: translateX(-50%) translateY(0);
+    }
+    50% {
+        transform: translateX(-50%) translateY(-5px);
+    }
+}
+
+.seatDead {
+    opacity: 0.4;
+    filter: grayscale(0.8);
+    pointer-events: none;
+}
+
+.seatDead .avatar {
+    transform: rotate(12deg) scale(0.85);
+}
+
+/* Disconnected player state */
+.seatDisconnected {
+    opacity: 0.5;
+}
+
+.seatDisconnected .avatar {
+    filter: grayscale(0.6);
+    border-color: rgba(150, 150, 150, 0.5);
+    animation: disconnectedPulse 2s ease-in-out infinite;
+}
+
+.seatDisconnected .seatName {
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.disconnectedBadge {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    font-size: 0.75rem;
+    animation: blink 1s ease-in-out infinite;
+    filter: drop-shadow(0 0 4px rgba(255, 200, 0, 0.8));
+}
+
+@keyframes disconnectedPulse {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.seatSelected .avatar {
+    border-color: var(--color-gold) !important;
+    box-shadow: 0 0 20px var(--color-gold-light) !important;
+}
+
+.avatar {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    /* Glass avatar */
+    background: linear-gradient(135deg, rgba(45, 15, 30, 0.7) 0%, rgba(26, 20, 32, 0.8) 100%);
+    border: 1px solid rgba(139, 34, 82, 0.4);
+    border-radius: 50%;
+    box-shadow: var(--glass-shadow-md), var(--glass-inset-top);
+    position: relative;
+    transition: all 0.2s var(--ease-smooth);
+}
+
+.seatYou .avatar {
+    border-color: rgba(139, 34, 82, 0.7);
+    box-shadow: var(--glass-shadow-glow-wine), var(--glass-inset-top);
+}
+
+/* When it's YOUR turn - extra prominent gold styling so you know it's your turn */
+.seatYou.seatActive .avatar {
+    border-color: var(--color-gold);
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.8), 0 0 60px rgba(212, 175, 55, 0.4), var(--glass-inset-top);
+    animation: yourTurnPulse 1s ease-in-out infinite;
+}
+
+@keyframes yourTurnPulse {
+    0%, 100% {
+        box-shadow: 0 0 35px rgba(212, 175, 55, 0.7), 0 0 50px rgba(212, 175, 55, 0.3), var(--glass-inset-top);
+    }
+    50% {
+        box-shadow: 0 0 50px rgba(212, 175, 55, 1), 0 0 80px rgba(212, 175, 55, 0.5), var(--glass-inset-top);
+    }
+}
+
+.avatarPulse {
+    animation: pulse 0.9s ease-in-out infinite;
+}
+
+.dealerBadge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 1rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.seatName {
+    /* Position below avatar without affecting avatar position */
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: var(--radius-sm);
+}
+
+.seatYou .seatName {
+    color: var(--color-gold);
+}
+
+.cardSlot {
+    font-size: 1.5rem;
+    margin-top: -4px;
+}
+
+.cardFacedown {
+    animation: pulse 2s infinite;
+}
+
+.cardRevealed {
+    opacity: 0.3;
+}
+
+/* Action Area - simple fixed container at bottom without toolbar styling */
+.actionArea {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    padding-bottom: calc(var(--space-md) + var(--safe-bottom));
+    min-height: 140px;
+    z-index: var(--z-overlay);
+}
+
+.drinkButton,
+.swapButton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-lg);
+    min-width: 100px;
+    /* Glass button base */
+    background: linear-gradient(135deg, rgba(45, 15, 30, 0.6) 0%, rgba(26, 20, 32, 0.7) 100%);
+    border: 1px solid rgba(139, 34, 82, 0.4);
+    border-radius: var(--radius-xl);
+    cursor: pointer;
+    transition: all 0.2s var(--ease-smooth);
+    box-shadow: var(--glass-inset-top);
+}
+
+.drinkButton {
+    border-color: rgba(139, 34, 82, 0.6);
+}
+
+.drinkButton:hover {
+    background: linear-gradient(135deg, rgba(139, 34, 82, 0.5) 0%, rgba(92, 22, 55, 0.6) 100%);
+    transform: scale(1.05);
+    box-shadow: var(--glass-shadow-glow-wine), var(--glass-inset-top);
+}
+
+.drinkButton:active {
+    transform: scale(0.95);
+}
+
+.swapButton {
+    border-color: rgba(100, 149, 237, 0.5);
+}
+
+.swapButton:hover,
+.swapActive {
+    background: linear-gradient(135deg, rgba(100, 149, 237, 0.25) 0%, rgba(100, 149, 237, 0.15) 100%);
+    border-color: var(--color-info);
+    transform: scale(1.05);
+}
+
+.swapActive {
+    box-shadow: 0 0 20px rgba(100, 149, 237, 0.4), var(--glass-inset-top);
+}
+
+.actionIcon {
+    font-size: 2.5rem;
+}
+
+.actionLabel {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+/* Caseus Vitae: Cheese badge on avatar */
+.cheeseBadge {
+    position: absolute;
+    bottom: -6px;
+    left: -6px;
+    font-size: 0.9rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    animation: pulse 2s infinite;
+}
+
+/* Caseus Vitae: Cheese warning on drink button */
+.cheeseWarning {
+    font-size: 0.75rem;
+    animation: pulse 1s infinite;
+}
+
+/* Caseus Vitae: Steal button - matching draggable card size */
+.stealButton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    padding: var(--space-md) var(--space-lg);
+    /* Match draggable card dimensions */
+    width: 100px;
+    height: 120px;
+    /* Glossy glass button */
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(180, 140, 30, 0.4) 100%);
+    border: 2px solid rgba(212, 175, 55, 0.5);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s var(--ease-smooth);
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3), var(--glass-inset-top);
+}
+
+.stealButton:hover,
+.stealActive {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0.15) 100%);
+    border-color: var(--color-gold);
+    transform: scale(1.05);
+}
+
+.stealActive {
+    box-shadow: var(--glass-shadow-glow-gold), var(--glass-inset-top);
+}
+
+/* Target Selection Modal */
+.targetSelection {
+    position: fixed;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    /* Glass modal */
+    background: linear-gradient(135deg, var(--glass-bg-medium) 0%, var(--glass-bg-dark) 100%);
+    border: 1px solid var(--glass-border-gold);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow-lg), var(--glass-shadow-glow-gold), var(--glass-inset-top);
+    z-index: var(--z-overlay);
+    animation: slideUp 0.3s var(--ease-bounce);
+    max-width: 90vw;
+}
+
+.targetSelection p {
+    color: var(--color-text-primary);
+    font-weight: 500;
+    margin: 0;
+}
+
+.targetList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    justify-content: center;
+}
+
+.targetButton {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 1rem;
+    /* Glass button */
+    background: rgba(45, 15, 30, 0.6);
+    border: 1px solid rgba(139, 34, 82, 0.4);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: var(--glass-inset-top);
+}
+
+.targetButton:hover {
+    background: linear-gradient(135deg, rgba(139, 34, 82, 0.5) 0%, rgba(92, 22, 55, 0.6) 100%);
+    border-color: rgba(139, 34, 82, 0.6);
+    transform: scale(1.05);
+}
+
+.waitingMessage {
+    padding: var(--space-md) var(--space-lg);
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+    /* Match draggable card height for no layout shift */
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Subtle glass styling */
+    background: rgba(45, 15, 30, 0.3);
+    border: 1px dashed rgba(139, 34, 82, 0.3);
+    border-radius: var(--radius-lg);
+}
+
+/* Swap Confirm */
+.swapConfirm {
+    position: fixed;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    /* Glass modal */
+    background: linear-gradient(135deg, var(--glass-bg-medium) 0%, var(--glass-bg-dark) 100%);
+    border: 1px solid var(--glass-border-gold);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow-lg), var(--glass-shadow-glow-gold), var(--glass-inset-top);
+    z-index: var(--z-overlay);
+    animation: slideUp 0.3s var(--ease-bounce);
+}
+
+.swapConfirm p {
+    color: var(--color-text-primary);
+    font-weight: 500;
+}
+
+.swapButtons {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.confirmButton,
+.cancelButton {
+    padding: var(--space-sm) var(--space-lg);
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: var(--glass-inset-top);
+}
+
+.confirmButton {
+    background: var(--color-success);
+    color: white;
+    border-color: rgba(75, 181, 67, 0.5);
+}
+
+.cancelButton {
+    /* Glass button */
+    background: rgba(45, 15, 30, 0.6);
+    border-color: rgba(139, 34, 82, 0.4);
+    color: var(--color-text-secondary);
+}
+
+.confirmButton:hover,
+.cancelButton:hover {
+    transform: scale(1.05);
+}
+
+/* Reveal Overlay */
+.revealOverlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-modal);
+    animation: fadeIn 0.2s;
+}
+
+.revealDoom {
+    background: rgba(220, 20, 60, 0.3);
+    animation: vignette 0.5s, fadeIn 0.2s;
+}
+
+.revealSafe {
+    background: rgba(80, 200, 120, 0.2);
+}
+
+/* Building phase - mysterious, suspenseful */
+.revealBuilding {
+    background: rgba(45, 15, 30, 0.85);
+    animation: revealBuildingPulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes revealBuildingPulse {
+    0% {
+        background: rgba(45, 15, 30, 0.85);
+    }
+    100% {
+        background: rgba(92, 22, 55, 0.9);
+    }
+}
+
+.revealCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-2xl);
+    /* Glass card */
+    background: linear-gradient(135deg, var(--glass-bg-medium) 0%, var(--glass-bg-dark) 100%);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--glass-shadow-lg), var(--glass-inset-top);
+    animation: bounceIn 0.5s var(--ease-bounce);
+    /* For flip animation */
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
+
+/* Card building phase - grows with anticipation */
+.revealCardBuilding {
+    animation: cardBuildingGrow 1.5s ease-out forwards;
+    border: 4px solid rgba(212, 175, 55, 0.6);
+}
+
+@keyframes cardBuildingGrow {
+    0% {
+        transform: scale(0.5) rotateY(0deg);
+        opacity: 0;
+    }
+    30% {
+        transform: scale(1) rotateY(0deg);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05) rotateY(5deg);
+    }
+    70% {
+        transform: scale(1.02) rotateY(-5deg);
+    }
+    100% {
+        transform: scale(1.1) rotateY(0deg);
+    }
+}
+
+/* Card showing phase - flip reveal */
+.revealCardShowing {
+    animation: cardFlipReveal 0.6s var(--ease-bounce) forwards;
+}
+
+@keyframes cardFlipReveal {
+    0% {
+        transform: scale(1.1) rotateY(0deg);
+    }
+    40% {
+        transform: scale(0.95) rotateY(90deg);
+    }
+    60% {
+        transform: scale(1.05) rotateY(90deg);
+    }
+    100% {
+        transform: scale(1) rotateY(0deg);
+    }
+}
+
+/* Mystery card icon during building phase */
+.revealIconBuilding {
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    /* Gold border for mystery card */
+    background: linear-gradient(135deg, rgba(92, 22, 55, 0.9) 0%, rgba(45, 15, 30, 0.95) 100%);
+    border: 3px solid rgba(212, 175, 55, 0.7);
+    border-radius: var(--radius-lg);
+    margin: var(--space-sm) 0;
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+    animation: mysteryCardShake 0.5s ease-in-out infinite;
+}
+
+@keyframes mysteryCardShake {
+    0%, 100% {
+        transform: rotate(-2deg);
+    }
+    25% {
+        transform: rotate(2deg) scale(1.02);
+    }
+    50% {
+        transform: rotate(-2deg) scale(0.98);
+    }
+    75% {
+        transform: rotate(2deg) scale(1.02);
+    }
+}
+
+.revealDoom .revealCard {
+    border: 4px solid var(--color-doom);
+    box-shadow: 0 0 40px var(--color-doom-glow);
+}
+
+.revealSafe .revealCard {
+    border: 4px solid var(--color-safe);
+    box-shadow: 0 0 40px var(--color-safe-glow);
+}
+
+/* Player info in reveal */
+.revealPlayerAvatar {
+    font-size: 3.5rem;
+    animation: bounceIn 0.4s var(--ease-bounce) both;
+}
+
+.revealPlayerName {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-xs);
+    animation: fadeIn 0.3s ease-out 0.2s both;
+}
+
+/* Revealed card icon - consistent size for both SAFE and DOOM */
+.revealIcon {
+    width: 100px;
+    height: 100px;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    animation: bounceIn 0.6s var(--ease-bounce) 0.3s both;
+    /* Glass card background */
+    background: linear-gradient(135deg, rgba(45, 15, 30, 0.8) 0%, rgba(26, 20, 32, 0.9) 100%);
+    border-radius: var(--radius-lg);
+    margin: var(--space-sm) 0;
+    flex-shrink: 0;
+}
+
+.revealDoom .revealIcon {
+    border: 3px solid var(--color-doom);
+    box-shadow: 0 0 30px rgba(220, 20, 60, 0.5);
+}
+
+.revealSafe .revealIcon {
+    border: 3px solid var(--color-safe);
+    box-shadow: 0 0 30px rgba(80, 200, 120, 0.5);
+}
+
+.revealType {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    animation: fadeIn 0.3s ease-out 0.5s both;
+}
+
+.revealDoom .revealType {
+    color: var(--color-doom);
+    text-shadow: 0 0 20px rgba(220, 20, 60, 0.5);
+}
+
+.revealSafe .revealType {
+    color: var(--color-safe);
+    text-shadow: 0 0 20px rgba(80, 200, 120, 0.5);
+}
+
+/* Seat reveal animation */
+.seatRevealing .avatar {
+    animation: seatRevealPulse 0.5s ease-out;
+}
+
+.seatRevealDoom .avatar {
+    animation: seatDeathShake 0.6s ease-out;
+    border-color: var(--color-doom) !important;
+    box-shadow: 0 0 30px rgba(220, 20, 60, 0.7) !important;
+}
+
+@keyframes seatRevealPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes seatDeathShake {
+    0%, 100% {
+        transform: translateX(0) rotate(0deg);
+    }
+    10% {
+        transform: translateX(-5px) rotate(-3deg);
+    }
+    20% {
+        transform: translateX(5px) rotate(3deg);
+    }
+    30% {
+        transform: translateX(-5px) rotate(-3deg);
+    }
+    40% {
+        transform: translateX(5px) rotate(3deg);
+    }
+    50% {
+        transform: translateX(-3px) rotate(-2deg);
+    }
+    60% {
+        transform: translateX(3px) rotate(2deg);
+    }
+    70% {
+        transform: translateX(-2px) rotate(-1deg);
+    }
+    80% {
+        transform: translateX(2px) rotate(1deg);
+    }
+}
+
+/* Drinking animation */
+.seatDrinking .avatar {
+    animation: drinkingTilt 0.6s ease-in-out;
+}
+
+.seatDrinking .cardSlot {
+    animation: cardFlip 0.5s ease-in-out;
+}
+
+@keyframes drinkingTilt {
+    0% {
+        transform: rotate(0deg);
+    }
+    30% {
+        transform: rotate(-15deg) translateY(-5px);
+    }
+    60% {
+        transform: rotate(-20deg) translateY(-8px);
+    }
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+@keyframes cardFlip {
+    0% {
+        transform: rotateY(0deg) scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: rotateY(90deg) scale(0.8);
+        opacity: 0.5;
+    }
+    100% {
+        transform: rotateY(180deg) scale(0);
+        opacity: 0;
+    }
+}
+
+/* Swapping animation */
+.seatSwapping .avatar {
+    animation: swapPulse 0.4s ease-in-out;
+}
+
+.seatSwapping .cardSlot {
+    opacity: 0.3;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+}
+
+@keyframes swapPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: var(--glass-shadow-md), var(--glass-inset-top);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 25px rgba(100, 149, 237, 0.6), var(--glass-inset-top);
+    }
+}
+
+/* Flying card animation - cards fly between players during swap */
+.flyingCard {
+    position: absolute;
+    font-size: 2rem;
+    z-index: 100;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+    animation: flyAcrossTable 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    /* Start position from CSS variables */
+    left: var(--start-x);
+    top: var(--start-y);
+    transform: translate(-50%, -50%);
+}
+
+@keyframes flyAcrossTable {
+    0% {
+        left: var(--start-x);
+        top: var(--start-y);
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    25% {
+        transform: translate(-50%, -50%) scale(1.3) rotate(-15deg) translateY(-30px);
+        opacity: 1;
+    }
+    50% {
+        /* Peak of the arc - cards should appear to cross paths here */
+        transform: translate(-50%, -50%) scale(1.4) rotate(0deg) translateY(-50px);
+        opacity: 1;
+    }
+    75% {
+        transform: translate(-50%, -50%) scale(1.3) rotate(15deg) translateY(-30px);
+        opacity: 1;
+    }
+    100% {
+        left: var(--end-x);
+        top: var(--end-y);
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+/* Dead Overlay */
+.deadOverlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: var(--space-lg);
+    padding-bottom: calc(var(--space-lg) + var(--safe-bottom));
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+    z-index: var(--z-overlay);
+}
+
+.deadContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    text-align: center;
+}
+
+.deadIcon {
+    font-size: 2rem;
+}
+
+.deadContent h2 {
+    color: var(--color-doom);
+}
+
+.deadContent p {
+    color: var(--color-text-secondary);
+}
+
+/* Game Over Overlay */
+.gameOverlay {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+    background: var(--color-bg-primary);
+}
+
+.winnerOverlay {
+    background:
+        radial-gradient(circle at center, rgba(212, 175, 55, 0.2) 0%, transparent 50%),
+        var(--color-bg-primary);
+}
+
+.gameOverContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+    text-align: center;
+    animation: bounceIn 0.8s var(--ease-bounce);
+}
+
+.winnerIcon {
+    font-size: 6rem;
+    filter: drop-shadow(0 4px 20px rgba(212, 175, 55, 0.5));
+}
+
+.winnerTitle {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    background: linear-gradient(135deg, var(--color-gold-light), var(--color-gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.gameOverTitle {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--color-text-primary);
+}
+
+.seriesScores {
+    padding: var(--space-lg);
+    /* Glass panel */
+    background: linear-gradient(135deg, rgba(92, 22, 55, 0.25) 0%, rgba(45, 15, 30, 0.2) 100%);
+    border: 1px solid rgba(139, 34, 82, 0.3);
+    border-radius: var(--radius-lg);
+    min-width: 250px;
+    box-shadow: var(--glass-shadow-md), var(--glass-inset-top);
+}
+
+.seriesScores h2 {
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-md);
+}
+
+.scoreList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.scoreRow {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-sm);
+    /* Glass row */
+    background: rgba(45, 15, 30, 0.5);
+    border: 1px solid rgba(139, 34, 82, 0.2);
+    border-radius: var(--radius-sm);
+}
+
+.wins {
+    color: var(--color-gold);
+    font-weight: 600;
+}
+
+.waitingText {
+    color: var(--color-text-secondary);
+    animation: pulse 2s infinite;
+}
+
+.menuButton {
+    margin-top: var(--space-md);
+    padding: var(--space-md) var(--space-xl);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    /* Glass button */
+    background: linear-gradient(135deg, var(--glass-bg-wine-strong) 0%, rgba(92, 22, 55, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(139, 34, 82, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15), var(--glass-inset-bottom);
+}
+
+.menuButton:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 32px rgba(139, 34, 82, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2), var(--glass-inset-bottom);
+}
+
+/* Exit Button - positioned on LEFT to avoid overlap with round indicator */
+.exitButton {
+    position: absolute;
+    top: calc(var(--safe-top) + var(--space-sm));
+    left: var(--space-sm);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    /* Glass button */
+    background: rgba(45, 15, 30, 0.6);
+    border: 1px solid rgba(139, 34, 82, 0.4);
+    border-radius: 50%;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: calc(var(--z-overlay) + 1);
+    box-shadow: var(--glass-inset-top);
+}
+
+.exitButton:hover {
+    background: var(--color-doom);
+    border-color: var(--color-doom);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Exit Confirmation Modal */
+.exitModal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: var(--z-modal);
+    animation: fadeIn 0.2s;
+}
+
+.exitModalContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-xl);
+    /* Glass modal */
+    background: linear-gradient(135deg, var(--glass-bg-medium) 0%, var(--glass-bg-dark) 100%);
+    border: 1px solid rgba(139, 34, 82, 0.5);
+    border-radius: var(--radius-xl);
+    text-align: center;
+    max-width: 320px;
+    animation: bounceIn 0.3s var(--ease-bounce);
+    box-shadow: var(--glass-shadow-lg), var(--glass-shadow-glow-wine), var(--glass-inset-top);
+}
+
+.exitModalContent h2 {
+    font-size: 1.25rem;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.exitModalContent p {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.exitModalButtons {
+    display: flex;
+    gap: var(--space-md);
+    width: 100%;
+}
+
+.exitModalButtons button {
+    flex: 1;
+    padding: var(--space-md);
+    font-size: 1rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: var(--glass-inset-top);
+}
+
+.exitModalButtons button:first-child {
+    /* Glass button */
+    background: rgba(45, 15, 30, 0.6);
+    border-color: rgba(139, 34, 82, 0.4);
+    color: var(--color-text-secondary);
+}
+
+.exitModalButtons button:last-child {
+    background: var(--color-doom);
+    border-color: rgba(220, 20, 60, 0.5);
+    color: white;
+}
+
+.exitModalButtons button:hover {
+    transform: scale(1.05);
+}
+
+/* Voting UI */
+.votingSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+    width: 100%;
+    max-width: 320px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.voteStatus {
+    text-align: center;
+}
+
+.voteCount {
+    font-size: 1.125rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+.voterList {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    /* Glass container */
+    background: rgba(45, 15, 30, 0.4);
+    border: 1px solid rgba(139, 34, 82, 0.2);
+    border-radius: var(--radius-lg);
+    width: 100%;
+}
+
+.voterItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    /* Glass item */
+    background: rgba(45, 15, 30, 0.5);
+    border: 1px solid rgba(139, 34, 82, 0.3);
+    border-radius: var(--radius-md);
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.voterVoted {
+    opacity: 1;
+    border-color: var(--color-safe);
+    background: rgba(80, 200, 120, 0.15);
+}
+
+.voterAvatar {
+    font-size: 1.25rem;
+}
+
+.voterName {
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.voterCheck {
+    font-size: 0.875rem;
+    color: var(--color-safe);
+    font-weight: 700;
+}
+
+.voteButtons {
+    display: flex;
+    gap: var(--space-md);
+    width: 100%;
+}
+
+.voteButton {
+    flex: 1;
+    padding: var(--space-md) var(--space-lg);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    /* Glass button */
+    background: linear-gradient(135deg, rgba(80, 200, 120, 0.3) 0%, rgba(60, 150, 90, 0.4) 100%);
+    border: 2px solid rgba(80, 200, 120, 0.5);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--glass-inset-top);
+}
+
+.voteButton:hover {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, rgba(80, 200, 120, 0.4) 0%, rgba(60, 150, 90, 0.5) 100%);
+    box-shadow: 0 0 20px rgba(80, 200, 120, 0.4), var(--glass-inset-top);
+}
+
+.voteButtonActive {
+    background: linear-gradient(135deg, rgba(80, 200, 120, 0.5) 0%, rgba(60, 150, 90, 0.6) 100%);
+    border-color: var(--color-safe);
+    box-shadow: 0 0 25px rgba(80, 200, 120, 0.5), var(--glass-inset-top);
+}
+
+.leaveButton {
+    flex: 1;
+    padding: var(--space-md) var(--space-lg);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    /* Glass button */
+    background: rgba(45, 15, 30, 0.6);
+    border: 1px solid rgba(139, 34, 82, 0.4);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--glass-inset-top);
+}
+
+.leaveButton:hover {
+    transform: scale(1.05);
+    background: rgba(220, 20, 60, 0.3);
+    border-color: var(--color-doom);
+    color: var(--color-text-primary);
+}
+
+.startingMessage {
+    text-align: center;
+    padding: var(--space-lg);
+}
+
+.startingMessage p {
+    font-size: 1.125rem;
+    color: var(--color-safe);
+    animation: pulse 1s infinite;
+}
+
+/* Drag-and-Drop UI - matching Wine/Poison button format */
+.draggableCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    padding: var(--space-md) var(--space-lg);
+    /* Fixed dimensions matching Wine/Poison cards */
+    width: 100px;
+    height: 120px;
+    /* Glossy glass card style */
+    background: linear-gradient(135deg, rgba(139, 34, 82, 0.5) 0%, rgba(92, 22, 55, 0.6) 100%);
+    border: 2px solid rgba(212, 175, 55, 0.6);
+    border-radius: var(--radius-lg);
+    cursor: grab;
+    transition: all 0.2s var(--ease-smooth);
+    box-shadow: 0 4px 20px rgba(139, 34, 82, 0.4), 0 0 20px rgba(212, 175, 55, 0.3), var(--glass-inset-top);
+    user-select: none;
+    touch-action: none;
+    position: relative;
+}
+
+.draggableCard:hover {
+    transform: scale(1.08);
+    box-shadow: 0 8px 32px rgba(212, 175, 55, 0.5), 0 0 30px rgba(212, 175, 55, 0.4), var(--glass-inset-top);
+}
+
+.draggableCard:active {
+    cursor: grabbing;
+    transform: scale(1.02);
+}
+
+.draggableCardDragging {
+    opacity: 0.5;
+    transform: scale(0.9);
+}
+
+.draggableCardIcon {
+    font-size: 2rem;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+}
+
+.cardWithHint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.draggableCardLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-align: center;
+}
+
+.cardHint {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+}
+
+/* Drag ghost - follows pointer with wobbly physics */
+.dragGhost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 1000;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    /* Full card styling */
+    padding: var(--space-sm) var(--space-md);
+    width: 80px;
+    height: 100px;
+    background: linear-gradient(135deg, rgba(139, 34, 82, 0.9) 0%, rgba(92, 22, 55, 0.95) 100%);
+    border: 2px solid rgba(212, 175, 55, 0.7);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 25px rgba(212, 175, 55, 0.4), var(--glass-inset-top);
+    /* Wobbly physics animation */
+    animation: wobblyCardDrag 0.15s ease-out infinite alternate;
+}
+
+.dragGhostValid {
+    animation: wobblyCardDragValid 0.12s ease-out infinite alternate;
+    border-color: var(--color-safe);
+    box-shadow: 0 16px 40px rgba(80, 200, 120, 0.4), 0 0 30px rgba(80, 200, 120, 0.5), var(--glass-inset-top);
+}
+
+.dragGhostIcon {
+    font-size: 1.75rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.dragGhostCardLabel {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    text-transform: uppercase;
+}
+
+.dragGhostLabel {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--color-safe);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+    margin-top: auto;
+}
+
+/* Wobbly physics animation */
+@keyframes wobblyCardDrag {
+    0% {
+        transform: translate(-50%, -50%) rotate(-3deg) scale(1.05);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(3deg) scale(1.02);
+    }
+}
+
+@keyframes wobblyCardDragValid {
+    0% {
+        transform: translate(-50%, -50%) rotate(-5deg) scale(1.1);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(5deg) scale(1.08);
+    }
+}
+
+/* Seat states for drag-and-drop */
+.seatDragValid .avatar {
+    border: 2px dashed rgba(100, 149, 237, 0.6);
+    animation: dragTargetPulse 1s ease-in-out infinite;
+}
+
+.seatDragTarget .avatar {
+    border: 3px solid var(--color-safe) !important;
+    box-shadow: 0 0 30px rgba(80, 200, 120, 0.6) !important;
+    transform: scale(1.15);
+}
+
+@keyframes dragTargetPulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(100, 149, 237, 0.3);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(100, 149, 237, 0.5);
+        transform: scale(1.05);
+    }
+}
+
+/* Responsive */
+@media (max-width: 380px) {
+    .table {
+        width: 85vw;
+    }
+
+    .avatar {
+        width: 52px;
+        height: 52px;
+        font-size: 1.5rem;
+    }
+
+    .seatName {
+        font-size: 0.6875rem;
+        max-width: 70px;
+    }
+
+    .actionIcon {
+        font-size: 2rem;
+    }
+
+    .drinkButton,
+    .swapButton {
+        min-width: 80px;
+        padding: var(--space-md);
+    }
+}
