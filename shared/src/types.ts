@@ -7,6 +7,7 @@ export type GamePhase =
     | 'DEALER_SETUP'
     | 'DEALING'
     | 'TURNS'
+    | 'AWAITING_REVEAL'  // Waiting for dealer to trigger reveal sequence
     | 'FINAL_REVEAL'
     | 'ROUND_END'
     | 'GAME_END';

@@ -342,6 +342,14 @@ function handleMessage(ws: WebSocket, rawMessage: unknown): void {
             handleDealerPreview(ws, info.playerId, info.roomId, message.seat, message.cardType);
             break;
 
+        case CLIENT_OPS.START_REVEAL:
+            if (!info?.playerId || !info?.roomId) {
+                sendError(ws, 'NOT_IN_ROOM', 'You must join first');
+                return;
+            }
+            handleStartReveal(ws, info.playerId, info.roomId);
+            break;
+
         case CLIENT_OPS.VOTE_REMATCH:
             if (!info?.playerId || !info?.roomId) {
                 sendError(ws, 'NOT_IN_ROOM', 'You must join first');
@@ -533,6 +541,20 @@ function handleDealerPreview(_ws: WebSocket, playerId: string, roomId: string, s
         seat,
         assigned: cardType !== null, // true if assigned, false if cleared
     });
+}
+
+// Dealer triggers reveal sequence
+function handleStartReveal(ws: WebSocket, playerId: string, roomId: string): void {
+    const room = roomManager.getRoom(roomId);
+    if (!room) return;
+
+    const state = room.getFullState(playerId);
+    const seat = state.yourSeat;
+
+    const result = room.handleStartReveal(seat);
+    if (!result.success) {
+        sendError(ws, result.error!, result.error!);
+    }
 }
 
 // Rematch voting

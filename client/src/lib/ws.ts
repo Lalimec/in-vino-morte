@@ -234,6 +234,13 @@ class WebSocketClient {
         });
     }
 
+    // Dealer triggers the reveal sequence after all players have acted
+    public startReveal(): void {
+        this.send({
+            op: CLIENT_OPS.START_REVEAL,
+        });
+    }
+
     // Rematch voting: Vote yes or retract vote
     public voteRematch(vote: boolean): void {
         this.send({

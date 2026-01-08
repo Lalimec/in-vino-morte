@@ -375,9 +375,9 @@ export class Room {
         // First player is left of dealer (next seat clockwise)
         const turnSeat = this.getNextAliveSeat(this.game.dealerSeat);
 
-        // If only dealer left (shouldn't happen), skip to final reveal
+        // If only dealer left (shouldn't happen), skip to awaiting reveal
         if (turnSeat === this.game.dealerSeat) {
-            this.finalReveal();
+            this.awaitingReveal();
             return;
         }
 
@@ -590,9 +590,9 @@ export class Room {
             if (nextSeat === this.game.turnSeat) break;
         }
 
-        // If we reached the dealer or all have acted, go to final reveal
+        // If we reached the dealer or all have acted, wait for dealer to trigger reveal
         if (nextSeat === this.game.dealerSeat || this.allNonDealersActed()) {
-            this.finalReveal();
+            this.awaitingReveal();
         } else {
             this.game.turnSeat = nextSeat;
             this.setTurnDeadline();
@@ -614,17 +614,39 @@ export class Room {
         return true;
     }
 
-    private finalReveal(): void {
+    // Called when all players have acted - waits for dealer to trigger reveals
+    private awaitingReveal(): void {
         if (!this.game) return;
 
         this.clearTimers();
-        this.game.phase = 'FINAL_REVEAL';
+        this.game.phase = 'AWAITING_REVEAL';
         this.game.deadlineTs = null;
 
         this.broadcastPhase();
+    }
+
+    // Dealer triggers the reveal sequence
+    public handleStartReveal(dealerSeat: number): { success: boolean; error?: string } {
+        if (!this.game || this.game.phase !== 'AWAITING_REVEAL') {
+            return { success: false, error: 'INVALID_ACTION' };
+        }
+
+        if (this.game.dealerSeat !== dealerSeat) {
+            return { success: false, error: 'NOT_DEALER' };
+        }
+
+        this.startRevealSequence();
+        return { success: true };
+    }
+
+    // Actually perform the reveal sequence
+    private startRevealSequence(): void {
+        if (!this.game) return;
+
+        this.game.phase = 'FINAL_REVEAL';
+        this.broadcastPhase();
 
         // Reveal all remaining facedown cards with delays
-        // Each reveal must wait for the client's full animation (build-up + hold + gap)
         const toReveal = [...this.game.facedownSeats];
         let delay = FINAL_REVEAL.INITIAL_DELAY_MS;
 

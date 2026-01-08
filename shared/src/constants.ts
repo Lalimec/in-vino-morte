@@ -20,6 +20,7 @@ export const CLIENT_OPS = {
     ACTION_STEAL_CHEESE: 'ACTION_STEAL_CHEESE', // Caseus Vitae
     DEALER_SET: 'DEALER_SET',
     DEALER_PREVIEW: 'DEALER_PREVIEW', // Real-time dealer assignment preview
+    START_REVEAL: 'START_REVEAL', // Dealer triggers the reveal sequence
     VOTE_REMATCH: 'VOTE_REMATCH', // Player votes for rematch
     LEAVE_ROOM: 'LEAVE_ROOM', // Player voluntarily leaves
     EMOTE: 'EMOTE',
@@ -62,13 +63,23 @@ export const ANIMATION = {
     TURN_RING_PULSE_MS: 900,
 } as const;
 
-// Final reveal timings - must match client animation durations
-export const FINAL_REVEAL = {
-    INITIAL_DELAY_MS: 500,        // Delay before first reveal
-    BUILD_UP_MS: 1500,            // Card grows with anticipation
-    HOLD_RESULT_MS: 2000,         // Show the result
-    GAP_BEFORE_NEXT_MS: 800,      // Pause before next reveal
-    // Total per reveal: 1500 + 2000 + 800 = 4300ms
-    PER_REVEAL_DURATION_MS: 4300,
-    BUFFER_MS: 500,               // Extra buffer before phase transition
+// Reveal timings - same for all reveals (turn reveals and final reveals)
+// Player focuses to center, card shakes with suspense, then flips to show result
+export const REVEAL = {
+    INITIAL_DELAY_MS: 100,        // Brief delay before first reveal in sequence
+    FOCUS_DURATION_MS: 400,       // Player info flies to center spotlight
+    SHAKE_DURATION_MS: 1000,      // Escalating shake before reveal
+    HOLD_RESULT_MS: 1200,         // Show the result
+    // Total per reveal: 400 + 1000 + 1200 = 2600ms
+    PER_REVEAL_DURATION_MS: 2600,
+    BUFFER_MS: 300,               // Buffer before phase transition
+} as const;
+
+// Keep FINAL_REVEAL as alias for backwards compatibility (server uses it)
+export const FINAL_REVEAL = REVEAL;
+
+// Drink action timings - must match client animation durations
+export const DRINK = {
+    ANIMATION_DELAY_MS: 100,      // Delay before sending action (for visual feedback)
+    ANIMATION_CLEAR_MS: 600,      // When to clear the drinking animation state
 } as const;

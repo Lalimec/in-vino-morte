@@ -76,6 +76,11 @@ export const LeaveRoomMessageSchema = z.object({
     op: z.literal(CLIENT_OPS.LEAVE_ROOM),
 });
 
+// Dealer triggers reveal sequence
+export const StartRevealMessageSchema = z.object({
+    op: z.literal(CLIENT_OPS.START_REVEAL),
+});
+
 // Union of all client messages
 export const ClientMessageSchema = z.discriminatedUnion('op', [
     JoinMessageSchema,
@@ -87,6 +92,7 @@ export const ClientMessageSchema = z.discriminatedUnion('op', [
     ActionStealCheeseMessageSchema, // Caseus Vitae
     DealerSetMessageSchema,
     DealerPreviewMessageSchema,
+    StartRevealMessageSchema, // Dealer triggers reveal sequence
     VoteRematchMessageSchema,
     LeaveRoomMessageSchema,
     EmoteMessageSchema,
@@ -127,7 +133,7 @@ const RoomStateSchema = z.object({
 });
 
 const GameStateSchema = z.object({
-    phase: z.enum(['LOBBY', 'DEALER_SETUP', 'DEALING', 'TURNS', 'FINAL_REVEAL', 'ROUND_END', 'GAME_END']),
+    phase: z.enum(['LOBBY', 'DEALER_SETUP', 'DEALING', 'TURNS', 'AWAITING_REVEAL', 'FINAL_REVEAL', 'ROUND_END', 'GAME_END']),
     dealerSeat: z.number(),
     turnSeat: z.number(),
     roundIndex: z.number(),
@@ -154,7 +160,7 @@ export const LobbyUpdateMessageSchema = z.object({
 
 export const PhaseMessageSchema = z.object({
     op: z.literal(SERVER_OPS.PHASE),
-    phase: z.enum(['LOBBY', 'DEALER_SETUP', 'DEALING', 'TURNS', 'FINAL_REVEAL', 'ROUND_END', 'GAME_END']),
+    phase: z.enum(['LOBBY', 'DEALER_SETUP', 'DEALING', 'TURNS', 'AWAITING_REVEAL', 'FINAL_REVEAL', 'ROUND_END', 'GAME_END']),
     dealerSeat: z.number(),
     turnSeat: z.number(),
     deadlineTs: z.number().nullable(),

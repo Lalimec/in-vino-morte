@@ -129,8 +129,9 @@
     align-items: center;
     gap: var(--space-sm);
     padding: var(--space-md);
-    /* Uniform height for all player cards */
-    min-height: 72px;
+    /* Fixed height for all player cards - no stretching */
+    height: 72px;
+    box-sizing: border-box;
     /* Maroon-tinted glass tile */
     background: rgba(45, 15, 30, 0.5);
     border: 1px solid rgba(139, 34, 82, 0.3);
@@ -156,26 +157,21 @@
     border-color: rgba(139, 34, 82, 0.5);
 }
 
+/* Your own player card - orange border to distinguish from others */
 .playerYou {
-    border-color: rgba(212, 175, 55, 0.6);
-    background: linear-gradient(135deg, rgba(92, 22, 55, 0.5) 0%, rgba(45, 15, 30, 0.5) 100%);
-    box-shadow: var(--glass-shadow-glow-gold), var(--glass-inset-top);
+    border-color: rgba(255, 140, 50, 0.7);
+    background: linear-gradient(135deg, rgba(255, 140, 50, 0.15) 0%, rgba(45, 15, 30, 0.5) 100%);
+    box-shadow: 0 0 12px rgba(255, 140, 50, 0.25), var(--glass-inset-top);
 }
 
-/* "You" avatar - larger and more prominent */
 .playerYou .avatar {
-    width: 60px;
-    height: 60px;
-    font-size: 1.75rem;
-    border-width: 2px;
-    border-color: var(--color-gold);
-    box-shadow: 0 0 15px rgba(212, 175, 55, 0.4), var(--glass-inset-top);
+    border-color: rgba(255, 140, 50, 0.8);
+    box-shadow: 0 0 10px rgba(255, 140, 50, 0.3), var(--glass-inset-top);
 }
 
+/* Host card - no special border, just rely on HOST tag text */
 .playerHost {
-    border-color: rgba(212, 175, 55, 0.6);
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(45, 15, 30, 0.5) 100%);
-    box-shadow: var(--glass-shadow-glow-gold), var(--glass-inset-top);
+    /* No special styling - HOST tag is sufficient */
 }
 
 /* Avatar */
@@ -241,12 +237,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    align-self: center;
     gap: var(--space-xs);
     padding: var(--space-xs) var(--space-sm);
     min-width: 70px;
+    min-height: 32px;
     height: 32px;
+    max-height: 32px;
+    box-sizing: border-box;
+    font-family: inherit;
     font-size: 0.75rem;
     font-weight: 700;
+    line-height: 1;
     text-transform: uppercase;
     letter-spacing: 0.03em;
     color: var(--color-text-muted);
@@ -258,6 +260,7 @@
     transition: all 0.2s var(--ease-smooth);
     flex-shrink: 0;
     box-shadow: var(--glass-inset-top);
+    margin: 0;
 }
 
 .readyBtn:hover {
@@ -278,12 +281,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    align-self: center;
     gap: var(--space-xs);
     padding: var(--space-xs) var(--space-sm);
     min-width: 70px;
     height: 32px;
+    max-height: 32px;
+    box-sizing: border-box;
+    font-family: inherit;
     font-size: 0.75rem;
     font-weight: 700;
+    line-height: 1;
     text-transform: uppercase;
     letter-spacing: 0.03em;
     /* Maroon-tinted glass */
@@ -496,50 +504,40 @@
 
     .playerCard {
         padding: var(--space-sm);
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
+        height: 60px;
         gap: var(--space-xs);
     }
 
     .avatar {
-        width: 36px;
-        height: 36px;
-        font-size: 1.125rem;
-    }
-
-    .playerYou .avatar {
-        width: 44px;
-        height: 44px;
-        font-size: 1.375rem;
+        width: 40px;
+        height: 40px;
+        font-size: 1.25rem;
     }
 
     .playerInfo {
-        align-items: center;
+        gap: 1px;
     }
 
     .playerName {
-        font-size: 0.75rem;
-    }
-
-    .playerTags {
-        justify-content: center;
+        font-size: 0.8125rem;
     }
 
     .hostTag, .youTag {
-        font-size: 0.5rem;
+        font-size: 0.5625rem;
     }
 
     .readyBtn {
-        min-width: 56px;
-        height: 26px;
+        min-width: 52px;
+        min-height: 28px;
+        height: 28px;
+        max-height: 28px;
         font-size: 0.625rem;
         padding: var(--space-xs);
     }
 
     .readyStatus {
-        min-width: 56px;
-        height: 26px;
+        min-width: 52px;
+        height: 28px;
         font-size: 0.625rem;
         padding: var(--space-xs);
     }

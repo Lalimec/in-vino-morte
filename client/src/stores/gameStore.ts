@@ -116,7 +116,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
         yourPlayerId: state.yourPlayerId,
     }),
 
-    updateLobby: (players, settings) => set({ players, settings }),
+    updateLobby: (players, settings) => set({
+        players,
+        settings,
+        // Clear game state when returning to lobby (after rematch vote)
+        game: null,
+        roomStatus: 'LOBBY',
+        // Clear any pending animations
+        pendingReveals: [],
+        pendingEliminations: [],
+        pendingCheeseStolen: [],
+        pendingSwaps: [],
+        // Clear voting state
+        votingPhase: null,
+        votedSeats: [],
+        requiredVotes: 0,
+    }),
 
     updatePhase: (phase, dealerSeat, turnSeat, deadlineTs, aliveSeats) => set((state) => ({
         // When we receive a game phase (not LOBBY), we're IN_GAME
@@ -145,10 +160,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
             deadlineTs,
             cheeseSeats: [],
         },
+        // Clear pending queues when starting a new round (DEALER_SETUP)
+        // This prevents stale animations from previous round corrupting state
+        ...(phase === 'DEALER_SETUP' ? {
+            pendingReveals: [],
+            pendingEliminations: [],
+            pendingSwaps: [],
+        } : {}),
     })),
 
     addReveal: (seat, cardType) => set((state) => ({
         pendingReveals: [...state.pendingReveals, { seat, cardType }],
+        // Remove from facedownSeats immediately - this player has revealed their card
+        game: state.game ? {
+            ...state.game,
+            facedownSeats: state.game.facedownSeats.filter(s => s !== seat),
+        } : null,
     })),
 
     consumeReveal: () => {
@@ -159,21 +186,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
         return first;
     },
 
+    // Queue elimination - DON'T update state yet, wait for animation
     addElimination: (seat) => set((state) => ({
         pendingEliminations: [...state.pendingEliminations, seat],
-        players: state.players.map(p => p.seat === seat ? { ...p, alive: false } : p),
-        game: state.game ? {
-            ...state.game,
-            aliveSeats: state.game.aliveSeats.filter(s => s !== seat),
-        } : null,
+        // State update deferred to consumeElimination after reveal animation
     })),
 
+    // Called AFTER reveal animation completes - NOW update the visual state
     consumeElimination: () => {
         const state = get();
         if (state.pendingEliminations.length === 0) return undefined;
-        const [first, ...rest] = state.pendingEliminations;
-        set({ pendingEliminations: rest });
-        return first;
+        const [seat, ...rest] = state.pendingEliminations;
+        set({
+            pendingEliminations: rest,
+            // NOW mark player as dead after animation showed it
+            players: state.players.map(p => p.seat === seat ? { ...p, alive: false } : p),
+            game: state.game ? {
+                ...state.game,
+                aliveSeats: state.game.aliveSeats.filter(s => s !== seat),
+            } : null,
+        });
+        return seat;
     },
 
     setGameEnd: (winnerSeat) => set((state) => ({
