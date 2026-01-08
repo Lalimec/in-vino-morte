@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Note: Static export disabled because dynamic routes (/game/[code], /lobby/[code])
-  // cannot be pre-generated - room codes are created at runtime
-  // output: "export",
+  // Static export - dynamic routes work client-side only (no SSR needed)
+  output: "export",
 
   // Disable image optimization (not needed for this app)
   images: {

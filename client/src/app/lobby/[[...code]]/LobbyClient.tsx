@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 import { useGameStore } from '@/stores/gameStore';
@@ -10,8 +10,7 @@ import WineBackground from '@/components/WineBackground';
 // Avatars - wine glass excluded (used for game cards)
 const AVATARS = ['🍸', '🥂', '🍹', '🍺', '🥃', '🧉', '☕', '🍵', '🫖', '🍾', '🍻', '🥤', '🧃', '🫗', '🍶'];
 
-export default function LobbyPage({ params }: { params: Promise<{ code: string }> }) {
-    const resolvedParams = use(params);
+export default function LobbyClient() {
     const router = useRouter();
     const [isReady, setIsReady] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -23,7 +22,11 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
         yourPlayerId,
         roomStatus,
         isConnected,
+        joinCode,
     } = useGameStore();
+
+    // Use joinCode from store (set when room was created/joined)
+    const code = joinCode ?? '';
 
     const isHost = yourPlayerId === hostId;
     const allOthersReady = players.filter(p => p.id !== hostId).every(p => p.ready);
@@ -49,10 +52,10 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
 
     // Navigate to game when status changes
     useEffect(() => {
-        if (roomStatus === 'IN_GAME') {
-            router.push(`/game/${resolvedParams.code}`);
+        if (roomStatus === 'IN_GAME' && code) {
+            router.push(`/game/${code}`);
         }
-    }, [roomStatus, router, resolvedParams.code]);
+    }, [roomStatus, router, code]);
 
     const handleReady = () => {
         const newReady = !isReady;
@@ -69,13 +72,13 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
     };
 
     const handleCopyCode = () => {
-        navigator.clipboard.writeText(resolvedParams.code);
+        navigator.clipboard.writeText(code);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
 
     const handleShare = async () => {
-        const shareUrl = `${window.location.origin}/lobby/${resolvedParams.code}`;
+        const shareUrl = `${window.location.origin}/lobby/${code}`;
         if (navigator.share) {
             try {
                 await navigator.share({
@@ -94,14 +97,6 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
             setTimeout(() => setCopied(false), 2000);
         }
     };
-
-    // Commented out - cheese expansion hidden for now
-    // const handleToggleCheese = () => {
-    //     if (!isHost) return;
-    //     getWsClient().updateSettings({
-    //         cheeseEnabled: !settings?.cheeseEnabled,
-    //     });
-    // };
 
     if (!isConnected) {
         return (
@@ -124,7 +119,7 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
                 <header className={styles.header}>
                     <button className={styles.roomCode} onClick={handleCopyCode}>
                         <span className={styles.codeLabel}>ROOM</span>
-                        <span className={styles.codeValue}>{resolvedParams.code}</span>
+                        <span className={styles.codeValue}>{code}</span>
                         <span className={styles.copyIcon}>{copied ? '✓' : '📋'}</span>
                     </button>
                     <button className={styles.shareBtn} onClick={handleShare}>
@@ -186,19 +181,6 @@ export default function LobbyPage({ params }: { params: Promise<{ code: string }
                         </div>
                     )}
                 </div>
-
-                {/* Settings - Hidden for now
-                {isHost && (
-                    <div className={styles.settings}>
-                        <button
-                            className={`${styles.settingItem} ${styles.settingToggle} ${settings?.cheeseEnabled ? styles.settingOn : ''}`}
-                            onClick={handleToggleCheese}
-                        >
-                            🧀 {settings?.cheeseEnabled ? 'ON' : 'OFF'}
-                        </button>
-                    </div>
-                )}
-                */}
 
                 {/* Footer with start */}
                 <footer className={styles.footer}>

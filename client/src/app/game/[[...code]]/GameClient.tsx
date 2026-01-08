@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useState, use, useRef } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 import { useGameStore } from '@/stores/gameStore';
@@ -35,8 +35,7 @@ import {
 import { EMITTER_EMOJIS, EMITTER_ANGLES, EMITTER_STAGGER } from './constants';
 import { getValidSwapTargets, getValidCheeseTargets, shuffleArray, getPhaseLabel, getDealerHint } from './utils';
 
-export default function GamePage({ params }: { params: Promise<{ code: string }> }) {
-    use(params);
+export default function GameClient() {
     const router = useRouter();
     const tableRef = useRef<HTMLDivElement>(null);
 
