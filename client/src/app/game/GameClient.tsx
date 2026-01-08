@@ -185,8 +185,8 @@ export default function GameClient() {
     }, [isConnected, router, roomStatus]);
 
     useEffect(() => {
-        if (roomStatus === 'LOBBY' && joinCode) router.push(`/lobby/${joinCode}`);
-    }, [roomStatus, joinCode, router]);
+        if (roomStatus === 'LOBBY') router.push('/lobby');
+    }, [roomStatus, router]);
 
     // Computed helper values
     const validSwapTargets = getValidSwapTargets(players, yourSeat, game?.facedownSeats ?? []);
