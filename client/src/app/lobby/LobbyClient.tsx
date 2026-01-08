@@ -52,10 +52,10 @@ export default function LobbyClient() {
 
     // Navigate to game when status changes
     useEffect(() => {
-        if (roomStatus === 'IN_GAME' && code) {
-            router.push(`/game/${code}`);
+        if (roomStatus === 'IN_GAME') {
+            router.push('/game');
         }
-    }, [roomStatus, router, code]);
+    }, [roomStatus, router]);
 
     const handleReady = () => {
         const newReady = !isReady;

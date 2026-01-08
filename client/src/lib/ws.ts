@@ -332,9 +332,25 @@ class WebSocketClient {
 // Singleton instance
 let wsClient: WebSocketClient | null = null;
 
+function getWebSocketUrl(): string {
+    // SSR/build time fallback (not actually used at runtime)
+    if (typeof window === 'undefined') {
+        return 'ws://localhost:3001';
+    }
+
+    // Development: localhost
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'ws://localhost:3001';
+    }
+
+    // Production: derive from current page URL
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/ws`;
+}
+
 export function getWsClient(): WebSocketClient {
     if (!wsClient) {
-        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
+        const wsUrl = getWebSocketUrl();
         wsClient = new WebSocketClient(wsUrl);
     }
     return wsClient;

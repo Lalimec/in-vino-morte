@@ -6,7 +6,16 @@ import styles from './page.module.css';
 import { useGameStore } from '@/stores/gameStore';
 import WineBackground from '@/components/WineBackground';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Get API URL at runtime based on current hostname
+function getApiUrl(): string {
+  if (typeof window === 'undefined') return '';
+  // Development: use localhost
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:3001';
+  }
+  // Production: use relative URLs (IIS proxies to Node server)
+  return '';
+}
 
 // Avatar emojis for selection
 // Avatars - wine glass excluded (used for game cards)
@@ -57,7 +66,7 @@ export default function Home() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/rooms`, {
+      const res = await fetch(`${getApiUrl()}/api/rooms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hostName: playerName.trim(), avatarId }),
@@ -74,7 +83,7 @@ export default function Home() {
       setToken(data.token);
       setRoomInfo(data.roomId, data.joinCode);
 
-      router.push(`/lobby/${data.joinCode}`);
+      router.push('/lobby');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create room');
     } finally {
@@ -97,7 +106,7 @@ export default function Home() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/rooms/join`, {
+      const res = await fetch(`${getApiUrl()}/api/rooms/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -124,7 +133,7 @@ export default function Home() {
       setToken(data.token);
       setRoomInfo(data.roomId, joinCode.trim().toUpperCase());
 
-      router.push(`/lobby/${joinCode.trim().toUpperCase()}`);
+      router.push('/lobby');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to join room');
     } finally {
