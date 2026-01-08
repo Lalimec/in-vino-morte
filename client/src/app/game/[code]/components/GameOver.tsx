@@ -7,7 +7,7 @@ import styles from '../page.module.css';
 interface GameOverProps {
     winner: Player | undefined;
     isWinner: boolean;
-    votingPhase: VotingPhase;
+    votingPhase: VotingPhase | null;
     votedSeats: number[];
     requiredVotes: number;
     yourSeat: number;

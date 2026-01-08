@@ -71,6 +71,9 @@ export interface RevealInfo {
     cardType: CardType;
 }
 
+// Voting phase (for rematch voting)
+export type VotingPhase = 'VOTING' | 'STARTING' | 'CANCELLED';
+
 // Error codes
 export type ErrorCode =
     | 'ROOM_NOT_FOUND'
