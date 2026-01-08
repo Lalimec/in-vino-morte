@@ -17,10 +17,7 @@ export const metadata: Metadata = {
   title: "In Vino Morte",
   description: "A social deduction party game. Drink or swap, survive the poison!",
   icons: {
-    icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "any" },
-    ],
+    icon: { url: "/favicon.svg", type: "image/svg+xml" },
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
