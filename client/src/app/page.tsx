@@ -157,7 +157,10 @@ export default function Home() {
         <div className={styles.container}>
           {/* Logo */}
           <div className={styles.logoSection}>
-            <div className={styles.logo}>🍷</div>
+            <div className={styles.logo}>
+              <span className={styles.logoWine}>🍷</span>
+              <span className={styles.logoSkull}>💀</span>
+            </div>
             <h1 className={styles.title}>In Vino Morte</h1>
             <p className={styles.subtitle}>Drink or Swap. Survive the Poison.</p>
           </div>

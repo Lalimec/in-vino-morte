@@ -32,10 +32,28 @@
 }
 
 .logo {
-  font-size: 64px;
-  margin-bottom: var(--space-sm);
+  position: relative;
+  width: 100px;
+  height: 80px;
+  margin: 0 auto var(--space-sm);
   filter: drop-shadow(0 4px 12px rgba(139, 34, 82, 0.5));
   animation: pulse 3s ease-in-out infinite;
+}
+
+.logoWine {
+  position: absolute;
+  font-size: 64px;
+  left: 0;
+  top: 20px;
+  transform: rotate(-15deg);
+}
+
+.logoSkull {
+  position: absolute;
+  font-size: 44px;
+  right: 0;
+  top: 30px;
+  transform: rotate(12deg);
 }
 
 .title {
@@ -327,6 +345,16 @@
   }
 
   .logo {
-    font-size: 60px;
+    width: 80px;
+    height: 64px;
+  }
+
+  .logoWine {
+    font-size: 52px;
+    top: -16px;
+  }
+
+  .logoSkull {
+    font-size: 36px;
   }
 }
