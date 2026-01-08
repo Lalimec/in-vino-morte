@@ -37,23 +37,52 @@
   height: 80px;
   margin: 0 auto var(--space-sm);
   filter: drop-shadow(0 4px 12px rgba(139, 34, 82, 0.5));
-  animation: pulse 3s ease-in-out infinite;
 }
 
 .logoWine {
   position: absolute;
   font-size: 64px;
   left: 0;
-  top: 20px;
-  transform: rotate(-15deg);
+  top: 0;
+  transform-origin: bottom center;
+  animation: wineSway 4s ease-in-out infinite;
 }
 
 .logoSkull {
   position: absolute;
   font-size: 44px;
   right: 0;
-  top: 30px;
-  transform: rotate(12deg);
+  top: 15px;
+  animation: skullBob 3s ease-in-out infinite;
+}
+
+/* Wine glass gentle sway - like swirling wine */
+@keyframes wineSway {
+  0%, 100% {
+    transform: rotate(-15deg) translateX(0);
+  }
+  25% {
+    transform: rotate(-12deg) translateX(2px);
+  }
+  50% {
+    transform: rotate(-18deg) translateX(-2px);
+  }
+  75% {
+    transform: rotate(-13deg) translateX(1px);
+  }
+}
+
+/* Skull playful bob */
+@keyframes skullBob {
+  0%, 100% {
+    transform: rotate(12deg) translateY(0);
+  }
+  33% {
+    transform: rotate(15deg) translateY(-3px);
+  }
+  66% {
+    transform: rotate(9deg) translateY(2px);
+  }
 }
 
 .title {
