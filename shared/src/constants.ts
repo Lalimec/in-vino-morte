@@ -1,6 +1,6 @@
 // Game constants
 export const MIN_PLAYERS = 3;
-export const MAX_PLAYERS = 60;
+export const MAX_PLAYERS = 16;
 export const DEFAULT_TURN_TIMER = 30; // seconds (was 8, increased for playability)
 export const DEALER_SETUP_TIMER = 15; // seconds
 export const RECONNECT_TIMEOUT = 60; // seconds
