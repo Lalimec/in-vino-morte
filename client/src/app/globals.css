@@ -125,11 +125,24 @@
   margin: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Optimize input performance on iOS */
+input, textarea, select {
+  -webkit-user-select: text;
+  user-select: text;
+  /* Force hardware acceleration */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 html {
   font-size: 16px;
   color-scheme: dark;
+  /* iOS performance optimizations */
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -140,6 +153,11 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* iOS keyboard performance fixes */
+  -webkit-overflow-scrolling: touch;
+  -webkit-user-select: text;
+  /* Prevent zoom on input focus in iOS Safari/WKWebView */
+  touch-action: manipulation;
 }
 
 /* Mobile-first: minimum tap target size */

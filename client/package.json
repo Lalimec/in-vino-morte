@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3000",
-    "build": "next build",
+    "build": "dotenv -e .env.mobile -- next build",
+    "build:web": "next build",
     "start": "next start",
     "lint": "eslint",
     "build:mobile": "dotenv -e .env.mobile -- next build && npx cap sync",

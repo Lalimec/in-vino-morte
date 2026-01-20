@@ -56,6 +56,10 @@ export function useSwapAnimation({
 
     // Calculate pixel position for a seat (matching getSeatPosition logic)
     const getPixelPosition = (seat: number, tableRect: DOMRect) => {
+        // Safety check: ensure valid dimensions to prevent NaN
+        if (!tableRect.width || !tableRect.height || tableRect.width === 0 || tableRect.height === 0) {
+            return { x: 0, y: 0 };
+        }
         const angle = (seat / totalSeats) * 2 * Math.PI - Math.PI / 2;
         return {
             x: tableRect.width * (0.5 + SEAT_RADIUS * Math.cos(angle)),

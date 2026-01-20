@@ -29,6 +29,7 @@ export function getApiUrl(): string {
     if (isCapacitor()) {
         // Set this at build time via environment variable
         const mobileApiUrl = process.env.NEXT_PUBLIC_API_URL;
+        console.log('[CONFIG] Mobile app detected, API URL:', mobileApiUrl);
         if (!mobileApiUrl) {
             console.error('NEXT_PUBLIC_API_URL not set for mobile build!');
             return '';

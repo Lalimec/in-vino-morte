@@ -109,6 +109,12 @@ export function useGameDragDrop({
             // Check if dragging over a valid target seat
             if (tableRef.current) {
                 const tableRect = tableRef.current.getBoundingClientRect();
+
+                // Safety check: ensure valid dimensions to prevent NaN
+                if (!tableRect.width || !tableRect.height || tableRect.width === 0 || tableRect.height === 0) {
+                    return;
+                }
+
                 const totalSeats = players.length;
                 let foundTarget: number | null = null;
 

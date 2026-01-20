@@ -301,6 +301,7 @@
 				DEVELOPMENT_TEAM = 27SB4DRA29;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "In Vino Morte";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.family-games";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -326,6 +327,7 @@
 				DEVELOPMENT_TEAM = 27SB4DRA29;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "In Vino Morte";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.family-games";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

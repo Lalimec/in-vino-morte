@@ -17,7 +17,17 @@ function getSessionId(): string {
   if (typeof window === 'undefined') return '';
   let sessionId = localStorage.getItem('sessionId');
   if (!sessionId) {
-    sessionId = crypto.randomUUID();
+    // Fallback for environments where crypto.randomUUID() is not available
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      sessionId = crypto.randomUUID();
+    } else {
+      // Simple UUID v4 fallback
+      sessionId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
     localStorage.setItem('sessionId', sessionId);
   }
   return sessionId;
@@ -45,11 +55,15 @@ export default function Home() {
     hideSplashScreen();
   }, []);
 
-  // Save name to localStorage when it changes
+  // Update name (save to localStorage on blur to avoid lag)
   const handleNameChange = (name: string) => {
     setPlayerName(name);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('playerName', name);
+  };
+
+  // Save name to localStorage when input loses focus
+  const handleNameBlur = () => {
+    if (typeof window !== 'undefined' && playerName.trim()) {
+      localStorage.setItem('playerName', playerName.trim());
     }
   };
 
@@ -67,18 +81,31 @@ export default function Home() {
       return;
     }
 
+    // Save name to localStorage before submitting
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('playerName', playerName.trim());
+    }
+
     setIsLoading(true);
     setError(null);
+
+    const sessionId = getSessionId();
+    const payload = { hostName: playerName.trim(), avatarId, sessionId };
+
+    console.log('[CREATE] API URL:', getApiUrl());
+    console.log('[CREATE] Payload:', payload);
+    console.log('[CREATE] SessionId valid UUID?', /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId));
 
     try {
       const res = await fetch(`${getApiUrl()}/api/rooms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostName: playerName.trim(), avatarId, sessionId: getSessionId() }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
         const data = await res.json();
+        console.error('[CREATE] Error response:', data);
         throw new Error(data.error || 'Failed to create room');
       }
 
@@ -107,31 +134,44 @@ export default function Home() {
       return;
     }
 
+    // Save name to localStorage before submitting
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('playerName', playerName.trim());
+    }
+
     setIsLoading(true);
     setError(null);
 
     const normalizedCode = joinCode.trim().toUpperCase();
+    const sessionId = getSessionId();
+    const payload = {
+      joinCode: normalizedCode,
+      name: playerName.trim(),
+      avatarId,
+      sessionId,
+    };
+
+    console.log('[JOIN] API URL:', getApiUrl());
+    console.log('[JOIN] Payload:', payload);
+    console.log('[JOIN] SessionId valid UUID?', /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId));
 
     try {
       const res = await fetch(`${getApiUrl()}/api/rooms/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          joinCode: normalizedCode,
-          name: playerName.trim(),
-          avatarId,
-          sessionId: getSessionId(),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
         const data = await res.json();
+        console.error('[JOIN] Error response:', data);
         const errorMessages: Record<string, string> = {
           'NAME_TAKEN': 'That name is already taken in this room',
           'ROOM_NOT_FOUND': 'Room not found. Check the code and try again',
           'ROOM_FULL': 'This room is full',
           'GAME_IN_PROGRESS': 'Game already started in this room',
           'SESSION_ALREADY_IN_ROOM': 'You are already in this room (check other tabs)',
+          'INVALID_REQUEST': 'Invalid request - check console for details',
         };
         throw new Error(errorMessages[data.error] || data.error || 'Failed to join room');
       }
@@ -218,6 +258,7 @@ export default function Home() {
                   className={styles.input}
                   value={playerName}
                   onChange={(e) => handleNameChange(e.target.value)}
+                  onBlur={handleNameBlur}
                   placeholder="Enter your name"
                   maxLength={20}
                   autoComplete="off"
@@ -231,10 +272,11 @@ export default function Home() {
                     type="text"
                     className={styles.codeInput}
                     value={joinCode}
-                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    onChange={(e) => setJoinCode(e.target.value)}
                     placeholder="ABCDEF"
                     maxLength={6}
                     autoComplete="off"
+                    style={{ textTransform: 'uppercase' }}
                   />
                 </div>
               )}

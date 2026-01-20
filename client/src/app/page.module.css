@@ -46,6 +46,10 @@
   top: 0;
   transform-origin: bottom center;
   animation: wineSway 4s ease-in-out infinite;
+  will-change: transform;
+  /* Optimize for GPU on iOS */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .logoSkull {
@@ -54,6 +58,10 @@
   right: 0;
   top: 15px;
   animation: skullBob 3s ease-in-out infinite;
+  will-change: transform;
+  /* Optimize for GPU on iOS */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 /* Wine glass gentle sway - like swirling wine */

@@ -43,9 +43,31 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--space-sm);
     margin-bottom: var(--space-lg);
     padding-bottom: var(--space-md);
     border-bottom: 1px solid rgba(139, 34, 82, 0.3);
+}
+
+.backBtn {
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(26, 20, 32, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-smooth);
+    white-space: nowrap;
+    min-height: 44px;
+}
+
+.backBtn:hover {
+    background: rgba(26, 20, 32, 0.8);
+    border-color: var(--glass-border-gold);
+    color: var(--color-text-primary);
+    box-shadow: var(--glass-shadow-glow-gold);
 }
 
 .roomCode {

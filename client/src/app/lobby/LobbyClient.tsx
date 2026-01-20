@@ -112,6 +112,13 @@ export default function LobbyClient() {
         }
     };
 
+    const handleLeaveRoom = () => {
+        const ws = getWsClient();
+        ws.disconnect();
+        useGameStore.getState().reset();
+        router.push('/');
+    };
+
     if (!isConnected) {
         return (
             <WineBackground>
@@ -131,6 +138,9 @@ export default function LobbyClient() {
                 <div className={styles.lobbyContainer}>
                 {/* Header */}
                 <header className={styles.header}>
+                    <button className={styles.backBtn} onClick={handleLeaveRoom} title="Leave room">
+                        ← Back
+                    </button>
                     <button className={styles.roomCode} onClick={handleCopyCode}>
                         <span className={styles.codeLabel}>ROOM</span>
                         <span className={styles.codeValue}>{code}</span>

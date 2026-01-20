@@ -82,11 +82,24 @@ in-vino-morte/
 
 ### Environment Variables
 
-**Client** (`client/.env.local`):
+**Client Web** (`client/.env.local`):
 ```
 NEXT_PUBLIC_API_URL=http://localhost:3001
 NEXT_PUBLIC_WS_URL=ws://localhost:3001
 ```
+
+**Client Mobile - iOS** (`client/.env.mobile`):
+```
+# Production (default)
+NEXT_PUBLIC_API_URL=https://invinommorte.cemil.al
+NEXT_PUBLIC_WS_URL=wss://invinommorte.cemil.al/ws
+
+# For local testing with iOS simulator, use .env.mobile.local:
+# NEXT_PUBLIC_API_URL=http://localhost:3001
+# NEXT_PUBLIC_WS_URL=ws://localhost:3001
+```
+
+**Note:** Android doesn't need `.env.mobile` because it uses `androidScheme: 'https'` in `capacitor.config.ts`, which makes it behave like a web app (uses relative URLs in production).
 
 **Server** (`server/.env`):
 ```
