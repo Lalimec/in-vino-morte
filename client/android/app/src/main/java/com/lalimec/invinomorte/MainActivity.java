@@ -1,4 +1,4 @@
-package com.invinomorte.app;
+package com.lalimec.invinomorte;
 
 import com.getcapacitor.BridgeActivity;
 

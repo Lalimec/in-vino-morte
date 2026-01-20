@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">In Vino Morte</string>
     <string name="title_activity_main">In Vino Morte</string>
-    <string name="package_name">com.invinomorte.app</string>
-    <string name="custom_url_scheme">com.invinomorte.app</string>
+    <string name="package_name">com.lalimec.invinomorte</string>
+    <string name="custom_url_scheme">com.lalimec.invinomorte</string>
 </resources>

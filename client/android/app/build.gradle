@@ -12,10 +12,10 @@ def appVersionCode = (versionParts[0].toInteger() * 10000) +
                      (versionParts.size() > 2 ? versionParts[2].toInteger() : 0)
 
 android {
-    namespace = "com.invinomorte.app"
+    namespace = "com.lalimec.invinomorte"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.invinomorte.app"
+        applicationId "com.lalimec.invinomorte"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode appVersionCode
