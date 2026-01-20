@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Room } from '../Room';
+import { Room } from '../room';
 import { JOIN_CODE_LENGTH, JOIN_CODE_CHARS } from '@in-vino-morte/shared';
 
 /**
