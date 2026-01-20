@@ -23,6 +23,7 @@ interface GameTableProps {
         dealerSeat: number;
         facedownSeats: number[];
         phase: string;
+        deadlineTs: number | null;
     } | null;
     isDealerSetup: boolean;
     isDealer: boolean;
@@ -181,6 +182,7 @@ export const GameTable = forwardRef<HTMLDivElement, GameTableProps>(function Gam
                             isDealerDragTargetSeat={isDealerDragTargetSeat}
                             selectedCard={selectedCard}
                             isDragging={isDragging}
+                            deadlineTs={isCurrentTurn ? game?.deadlineTs ?? null : null}
                             onClick={() => {
                                 if (isDealerSetup && isDealer && player.alive) {
                                     onDealerSeatClick(player.seat);

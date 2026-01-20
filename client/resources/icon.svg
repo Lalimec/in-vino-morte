@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1420"/>
+      <stop offset="100%" style="stop-color:#0d0a0e"/>
+    </linearGradient>
+    <linearGradient id="wineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#b03060"/>
+      <stop offset="100%" style="stop-color:#5c1637"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="200" fill="url(#bgGrad)"/>
+
+  <!-- Wine glass - stylized -->
+  <g transform="translate(512, 520)">
+    <!-- Glass bowl -->
+    <ellipse cx="0" cy="-80" rx="180" ry="140" fill="url(#wineGrad)" opacity="0.9"/>
+    <!-- Wine liquid -->
+    <ellipse cx="0" cy="-40" rx="150" ry="100" fill="#8b2252"/>
+    <!-- Glass stem -->
+    <rect x="-25" y="60" width="50" height="180" fill="rgba(255,255,255,0.15)" rx="10"/>
+    <!-- Glass base -->
+    <ellipse cx="0" cy="260" rx="120" ry="30" fill="rgba(255,255,255,0.15)"/>
+
+    <!-- Skull overlay -->
+    <g transform="translate(0, -60) scale(0.8)">
+      <!-- Skull shape -->
+      <ellipse cx="0" cy="0" rx="120" ry="100" fill="#f5f0f8"/>
+      <ellipse cx="0" cy="60" rx="80" ry="50" fill="#f5f0f8"/>
+      <!-- Eye sockets -->
+      <ellipse cx="-50" cy="-20" rx="35" ry="40" fill="#0d0a0e"/>
+      <ellipse cx="50" cy="-20" rx="35" ry="40" fill="#0d0a0e"/>
+      <!-- Nose -->
+      <path d="M-15 30 L0 60 L15 30 Z" fill="#0d0a0e"/>
+      <!-- Teeth -->
+      <rect x="-60" y="70" width="20" height="30" rx="3" fill="#0d0a0e"/>
+      <rect x="-30" y="70" width="20" height="35" rx="3" fill="#0d0a0e"/>
+      <rect x="0" y="70" width="20" height="35" rx="3" fill="#0d0a0e"/>
+      <rect x="30" y="70" width="20" height="30" rx="3" fill="#0d0a0e"/>
+    </g>
+  </g>
+
+  <!-- Subtle glow -->
+  <circle cx="512" cy="440" r="300" fill="url(#wineGrad)" opacity="0.1" filter="blur(60px)"/>
+</svg>

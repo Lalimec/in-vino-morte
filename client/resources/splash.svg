@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2732 2732">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1420"/>
+      <stop offset="50%" style="stop-color:#0d0a0e"/>
+      <stop offset="100%" style="stop-color:#1a1420"/>
+    </linearGradient>
+    <linearGradient id="wineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#b03060"/>
+      <stop offset="100%" style="stop-color:#5c1637"/>
+    </linearGradient>
+    <radialGradient id="glowGrad" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" style="stop-color:#8b2252;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#8b2252;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="2732" height="2732" fill="url(#bgGrad)"/>
+
+  <!-- Ambient glow -->
+  <ellipse cx="1366" cy="1100" rx="800" ry="600" fill="url(#glowGrad)"/>
+
+  <!-- Wine glass and skull - centered -->
+  <g transform="translate(1366, 1200)">
+    <!-- Glass bowl -->
+    <ellipse cx="0" cy="-100" rx="220" ry="170" fill="url(#wineGrad)" opacity="0.9"/>
+    <!-- Wine liquid -->
+    <ellipse cx="0" cy="-50" rx="180" ry="120" fill="#8b2252"/>
+    <!-- Glass stem -->
+    <rect x="-30" y="70" width="60" height="220" fill="rgba(255,255,255,0.15)" rx="12"/>
+    <!-- Glass base -->
+    <ellipse cx="0" cy="320" rx="140" ry="35" fill="rgba(255,255,255,0.15)"/>
+
+    <!-- Skull overlay -->
+    <g transform="translate(0, -70) scale(1)">
+      <!-- Skull shape -->
+      <ellipse cx="0" cy="0" rx="140" ry="120" fill="#f5f0f8"/>
+      <ellipse cx="0" cy="70" rx="95" ry="60" fill="#f5f0f8"/>
+      <!-- Eye sockets -->
+      <ellipse cx="-60" cy="-25" rx="42" ry="48" fill="#0d0a0e"/>
+      <ellipse cx="60" cy="-25" rx="42" ry="48" fill="#0d0a0e"/>
+      <!-- Nose -->
+      <path d="M-18 35 L0 72 L18 35 Z" fill="#0d0a0e"/>
+      <!-- Teeth -->
+      <rect x="-72" y="85" width="24" height="36" rx="4" fill="#0d0a0e"/>
+      <rect x="-36" y="85" width="24" height="42" rx="4" fill="#0d0a0e"/>
+      <rect x="0" y="85" width="24" height="42" rx="4" fill="#0d0a0e"/>
+      <rect x="36" y="85" width="24" height="36" rx="4" fill="#0d0a0e"/>
+    </g>
+  </g>
+
+  <!-- Title text -->
+  <text x="1366" y="1750" text-anchor="middle" font-family="Georgia, serif" font-size="120" fill="#f5f0f8" font-weight="400">
+    In Vino Morte
+  </text>
+
+  <!-- Subtitle -->
+  <text x="1366" y="1850" text-anchor="middle" font-family="sans-serif" font-size="48" fill="#b8a8c8">
+    Drink or Swap. Survive the Poison.
+  </text>
+</svg>

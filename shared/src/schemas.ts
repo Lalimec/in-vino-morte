@@ -246,6 +246,12 @@ export const PlayerLeftMessageSchema = z.object({
     reason: z.enum(['disconnected', 'left']),
 });
 
+// Player reconnected notification
+export const PlayerReconnectedMessageSchema = z.object({
+    op: z.literal(SERVER_OPS.PLAYER_RECONNECTED),
+    seat: z.number(),
+});
+
 // Union of all server messages
 export const ServerMessageSchema = z.discriminatedUnion('op', [
     StateMessageSchema,
@@ -260,6 +266,7 @@ export const ServerMessageSchema = z.discriminatedUnion('op', [
     DealerPreviewServerMessageSchema, // Real-time dealer assignment
     VoteUpdateMessageSchema, // Rematch voting
     PlayerLeftMessageSchema, // Player left room
+    PlayerReconnectedMessageSchema, // Player reconnected
     RoundEndMessageSchema,
     GameEndMessageSchema,
     ErrorMessageSchema,
@@ -275,6 +282,7 @@ export type ServerMessage = z.infer<typeof ServerMessageSchema>;
 export const CreateRoomRequestSchema = z.object({
     hostName: z.string().min(1).max(20),
     avatarId: z.number().int().min(0).max(15),
+    sessionId: z.string().uuid(),
 });
 
 export const CreateRoomResponseSchema = z.object({
@@ -287,6 +295,7 @@ export const JoinRoomRequestSchema = z.object({
     joinCode: z.string().length(6),
     name: z.string().min(1).max(20),
     avatarId: z.number().int().min(0).max(15),
+    sessionId: z.string().uuid(),
 });
 
 export const JoinRoomResponseSchema = z.object({

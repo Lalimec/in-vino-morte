@@ -42,12 +42,26 @@ export default function LobbyClient() {
             return;
         }
 
+        // Handle connection errors
+        const handleError = (data: Record<string, unknown>) => {
+            if (data.code === 'INVALID_TOKEN' || data.code === 'ROOM_NOT_FOUND') {
+                store.reset();
+                router.push('/');
+            }
+        };
+
+        ws.on('error', handleError);
+
         ws.connect().then(() => {
             ws.join(store.token!, store.playerName, store.avatarId);
         }).catch((err) => {
             console.error('Failed to connect:', err);
             router.push('/');
         });
+
+        return () => {
+            ws.off('error', handleError);
+        };
     }, [router]);
 
     // Navigate to game when status changes

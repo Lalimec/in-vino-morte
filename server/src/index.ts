@@ -57,7 +57,14 @@ wss.on('connection', (ws: WebSocket) => {
         if (info?.playerId && info?.roomId) {
             const room = roomManager.getRoom(info.roomId);
             if (room) {
+                // Check if in lobby before disconnect (player will be removed immediately)
+                const wasInLobby = !room.isInGame();
                 room.disconnectPlayer(info.playerId);
+
+                // Clean up token if player was removed from lobby
+                if (wasInLobby) {
+                    roomManager.removePlayerToken(info.playerId);
+                }
             }
         }
     });

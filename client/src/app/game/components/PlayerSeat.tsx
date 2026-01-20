@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import type { Player } from '@in-vino-morte/shared';
 import { AVATARS } from '../constants';
 import styles from '../page.module.css';
@@ -30,6 +31,7 @@ interface PlayerSeatProps {
     isDealerDragTargetSeat: boolean;
     selectedCard: 'SAFE' | 'DOOM' | null;
     isDragging: boolean;
+    deadlineTs: number | null;
     onClick: () => void;
 }
 
@@ -67,8 +69,29 @@ export function PlayerSeat({
     isDealerDragTargetSeat,
     selectedCard,
     isDragging,
+    deadlineTs,
     onClick,
 }: PlayerSeatProps) {
+    // Countdown timer state
+    const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!deadlineTs) {
+            setSecondsLeft(null);
+            return;
+        }
+
+        const updateTimer = () => {
+            const remaining = Math.max(0, Math.ceil((deadlineTs - Date.now()) / 1000));
+            setSecondsLeft(remaining);
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 100);
+
+        return () => clearInterval(interval);
+    }, [deadlineTs]);
+
     const seatClasses = `
         ${styles.seat}
         ${player.seat === yourSeat ? styles.seatYou : ''}
@@ -102,6 +125,12 @@ export function PlayerSeat({
                 {isPlayerDealer && <span className={styles.dealerBadge}>{'\uD83D\uDC51'}</span>}
                 {player.hasCheese && <span className={styles.cheeseBadge}>{'\uD83E\uDDC0'}</span>}
                 {isDisconnected && <span className={styles.disconnectedBadge}>{'\u26A1'}</span>}
+                {/* Turn timer countdown */}
+                {secondsLeft !== null && secondsLeft >= 0 && (
+                    <span className={`${styles.timerBadge} ${secondsLeft <= 5 ? styles.timerUrgent : ''} ${secondsLeft <= 3 ? styles.timerCritical : ''}`}>
+                        {secondsLeft}
+                    </span>
+                )}
             </div>
             <span className={styles.seatName}>
                 {isDisconnected ? '...' : player.seat === yourSeat ? 'You' : player.name.substring(0, 8)}

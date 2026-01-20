@@ -5,21 +5,23 @@ import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 import { useGameStore } from '@/stores/gameStore';
 import WineBackground from '@/components/WineBackground';
-
-// Get API URL at runtime based on current hostname
-function getApiUrl(): string {
-  if (typeof window === 'undefined') return '';
-  // Development: use localhost
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:3001';
-  }
-  // Production: use relative URLs (IIS proxies to Node server)
-  return '';
-}
+import { getApiUrl } from '@/lib/config';
+import { hideSplashScreen } from '@/lib/capacitor';
 
 // Avatar emojis for selection
 // Avatars - wine glass excluded (used for game cards)
 const AVATARS = ['🍸', '🥂', '🍹', '🍺', '🥃', '🧉', '☕', '🍵', '🫖', '🍾', '🍻', '🥤', '🧃', '🫗', '🍶'];
+
+// Get or create a persistent session ID for this browser
+function getSessionId(): string {
+  if (typeof window === 'undefined') return '';
+  let sessionId = localStorage.getItem('sessionId');
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem('sessionId', sessionId);
+  }
+  return sessionId;
+}
 
 export default function Home() {
   const router = useRouter();
@@ -32,12 +34,15 @@ export default function Home() {
 
   const { setPlayerInfo, setToken, setRoomInfo } = useGameStore();
 
-  // Load saved name from localStorage on mount
+  // Load saved name from localStorage on mount and hide splash screen
   useEffect(() => {
     const savedName = localStorage.getItem('playerName');
     const savedAvatarId = localStorage.getItem('avatarId');
     if (savedName) setPlayerName(savedName);
     if (savedAvatarId) setAvatarId(parseInt(savedAvatarId));
+
+    // Hide splash screen once the app is ready (mobile only)
+    hideSplashScreen();
   }, []);
 
   // Save name to localStorage when it changes
@@ -69,7 +74,7 @@ export default function Home() {
       const res = await fetch(`${getApiUrl()}/api/rooms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostName: playerName.trim(), avatarId }),
+        body: JSON.stringify({ hostName: playerName.trim(), avatarId, sessionId: getSessionId() }),
       });
 
       if (!res.ok) {
@@ -105,14 +110,17 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
 
+    const normalizedCode = joinCode.trim().toUpperCase();
+
     try {
       const res = await fetch(`${getApiUrl()}/api/rooms/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          joinCode: joinCode.trim().toUpperCase(),
+          joinCode: normalizedCode,
           name: playerName.trim(),
-          avatarId
+          avatarId,
+          sessionId: getSessionId(),
         }),
       });
 
@@ -123,6 +131,7 @@ export default function Home() {
           'ROOM_NOT_FOUND': 'Room not found. Check the code and try again',
           'ROOM_FULL': 'This room is full',
           'GAME_IN_PROGRESS': 'Game already started in this room',
+          'SESSION_ALREADY_IN_ROOM': 'You are already in this room (check other tabs)',
         };
         throw new Error(errorMessages[data.error] || data.error || 'Failed to join room');
       }
@@ -131,7 +140,7 @@ export default function Home() {
 
       setPlayerInfo(playerName.trim(), avatarId);
       setToken(data.token);
-      setRoomInfo(data.roomId, joinCode.trim().toUpperCase());
+      setRoomInfo(data.roomId, normalizedCode);
 
       router.push('/lobby');
     } catch (err) {

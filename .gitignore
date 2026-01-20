@@ -18,6 +18,7 @@ out/
 .env.test.local
 .env.production.local
 .env*.local
+.env.mobile
 
 # Logs
 logs/
@@ -78,3 +79,37 @@ coverage/
 
 # Windows reserved names
 nul
+
+# Capacitor / Mobile
+client/android/.gradle/
+client/android/.idea/
+client/android/app/build/
+client/android/app/.cxx/
+client/android/build/
+client/android/local.properties
+client/android/captures/
+client/android/*.iml
+client/android/app/*.iml
+client/ios/App/App/public/
+client/ios/App/Pods/
+client/ios/App/App.xcworkspace/xcuserdata/
+client/ios/App/DerivedData/
+*.xcworkspace
+*.xcuserdata
+*.ipa
+*.apk
+*.aab
+
+# Mobile signing keys (NEVER commit these!)
+*.keystore
+*.jks
+client/android/keystore/
+client/ios/*.p12
+client/ios/*.mobileprovision
+
+# Generated mobile assets (regenerate with npm run cap:assets)
+client/android/app/src/main/res/mipmap-*/
+client/android/app/src/main/res/drawable-*/ic_launcher*.png
+client/android/app/src/main/res/drawable/splash.png
+client/ios/App/App/Assets.xcassets/AppIcon.appiconset/*.png
+client/ios/App/App/Assets.xcassets/Splash.imageset/*.png

@@ -328,6 +328,48 @@
     }
 }
 
+/* Turn timer badge */
+.timerBadge {
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    min-width: 24px;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid var(--color-wine);
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
+}
+
+.timerUrgent {
+    border-color: #f59e0b;
+    color: #f59e0b;
+    animation: timerPulse 0.5s ease-in-out infinite;
+}
+
+.timerCritical {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.2);
+    animation: timerPulse 0.25s ease-in-out infinite;
+}
+
+@keyframes timerPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+}
+
 .seatSelected .avatar {
     border-color: var(--color-gold) !important;
     box-shadow: 0 0 20px var(--color-gold-light) !important;

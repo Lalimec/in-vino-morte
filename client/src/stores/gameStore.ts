@@ -67,6 +67,7 @@ interface GameStore {
     toggleMotion: () => void;
     updateVoteStatus: (votedYes: number[], requiredVotes: number, phase: 'VOTING' | 'STARTING' | 'CANCELLED') => void;
     handlePlayerLeft: (seat: number, reason: 'disconnected' | 'left') => void;
+    handlePlayerReconnected: (seat: number) => void;
     reset: () => void;
 }
 
@@ -294,13 +295,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
         votingPhase: phase,
     }),
 
-    handlePlayerLeft: (seat, reason) => set((state) => ({
-        players: state.players.filter(p => p.seat !== seat),
-        // Also update aliveSeats if the player was in the game
-        game: state.game ? {
-            ...state.game,
-            aliveSeats: state.game.aliveSeats.filter(s => s !== seat),
-        } : null,
+    handlePlayerLeft: (seat, reason) => set((state) => {
+        // In LOBBY or if they explicitly left: remove player entirely
+        if (state.roomStatus === 'LOBBY' || reason === 'left') {
+            return {
+                players: state.players.filter(p => p.seat !== seat),
+                game: state.game ? {
+                    ...state.game,
+                    aliveSeats: state.game.aliveSeats.filter(s => s !== seat),
+                } : null,
+            };
+        }
+
+        // IN_GAME disconnect: just mark as disconnected, don't remove
+        return {
+            players: state.players.map(p =>
+                p.seat === seat ? { ...p, connected: false } : p
+            ),
+        };
+    }),
+
+    handlePlayerReconnected: (seat) => set((state) => ({
+        players: state.players.map(p =>
+            p.seat === seat ? { ...p, connected: true } : p
+        ),
     })),
 
     reset: () => set(initialState),

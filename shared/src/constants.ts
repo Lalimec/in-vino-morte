@@ -1,9 +1,10 @@
 // Game constants
 export const MIN_PLAYERS = 3;
 export const MAX_PLAYERS = 16;
-export const DEFAULT_TURN_TIMER = 30; // seconds (was 8, increased for playability)
+export const DEFAULT_TURN_TIMER = 99; // seconds (was 8, increased for playability)
 export const DEALER_SETUP_TIMER = 15; // seconds
-export const RECONNECT_TIMEOUT = 60; // seconds
+export const RECONNECT_TIMEOUT = 30; // seconds
+export const DISCONNECTED_TURN_TIMEOUT = 10; // seconds - auto-drink for disconnected players
 export const JOIN_CODE_LENGTH = 6;
 export const JOIN_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No I, O, 0, 1 for clarity
 export const DEFAULT_CHEESE_COUNT = 2; // Caseus Vitae expansion
@@ -40,6 +41,7 @@ export const SERVER_OPS = {
     DEALER_PREVIEW: 'DEALER_PREVIEW', // Real-time dealer assignment preview
     VOTE_UPDATE: 'VOTE_UPDATE', // Broadcast rematch vote status
     PLAYER_LEFT: 'PLAYER_LEFT', // Player left the room
+    PLAYER_RECONNECTED: 'PLAYER_RECONNECTED', // Player reconnected to the room
     ROUND_END: 'ROUND_END',
     GAME_END: 'GAME_END',
     ERROR: 'ERROR',

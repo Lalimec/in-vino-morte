@@ -180,7 +180,7 @@ function handleJoin(
     }
 
     // New player joining
-    const result = room.addPlayer(tokenInfo.playerId, name, avatarId, token, ws);
+    const result = room.addPlayer(tokenInfo.playerId, name, avatarId, token, tokenInfo.sessionId, ws);
 
     if (!result.success) {
         sendError(ws, result.error!, result.error!);
@@ -371,6 +371,9 @@ function handleLeaveRoom(
     if (!room) return;
 
     room.handlePlayerLeave(playerId);
+
+    // Clean up token mapping
+    roomManager.removePlayerToken(playerId);
 
     // Clean up socket data
     socketData.delete(ws);

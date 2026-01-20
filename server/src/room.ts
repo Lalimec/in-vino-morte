@@ -13,6 +13,7 @@ import {
     MAX_PLAYERS,
     DEFAULT_TURN_TIMER,
     RECONNECT_TIMEOUT,
+    DISCONNECTED_TURN_TIMEOUT,
     DEFAULT_CHEESE_COUNT,
     FINAL_REVEAL,
 } from '@in-vino-morte/shared';
@@ -22,6 +23,7 @@ interface PlayerConnection {
     player: Player;
     ws: WebSocket | null;
     token: string;
+    sessionId: string;
     disconnectedAt: number | null;
 }
 
@@ -64,7 +66,7 @@ export class Room {
     // Player Management
     // ==========================================
 
-    public addPlayer(id: string, name: string, avatarId: number, token: string, ws: WebSocket): { success: boolean; error?: string } {
+    public addPlayer(id: string, name: string, avatarId: number, token: string, sessionId: string, ws: WebSocket): { success: boolean; error?: string } {
         if (this.players.size >= MAX_PLAYERS) {
             return { success: false, error: 'ROOM_FULL' };
         }
@@ -97,7 +99,7 @@ export class Room {
             hasCheese: false, // Caseus Vitae
         };
 
-        this.players.set(id, { player, ws, token, disconnectedAt: null });
+        this.players.set(id, { player, ws, token, sessionId, disconnectedAt: null });
         this.seatToPlayerId.set(seat, id);
 
         return { success: true };
@@ -109,6 +111,13 @@ export class Room {
                 conn.ws = ws;
                 conn.player.connected = true;
                 conn.disconnectedAt = null;
+
+                // Broadcast reconnection to other players
+                this.broadcastExcept(playerId, {
+                    op: 'PLAYER_RECONNECTED',
+                    seat: conn.player.seat,
+                });
+
                 return { success: true, playerId };
             }
         }
@@ -117,24 +126,58 @@ export class Room {
 
     public disconnectPlayer(playerId: string): void {
         const conn = this.players.get(playerId);
-        if (conn) {
-            conn.ws = null;
-            conn.player.connected = false;
-            conn.disconnectedAt = Date.now();
+        if (!conn) return;
 
-            // If in voting phase, update vote status immediately
-            // (disconnected players don't count toward required votes)
-            if (this.isVotingPhase) {
-                this.rematchVotes.delete(conn.player.seat);
-                this.broadcastVoteUpdate();
-                this.checkVoteResolution();
-            }
-
-            // Schedule timeout check
-            setTimeout(() => {
-                this.checkDisconnectTimeout(playerId);
-            }, RECONNECT_TIMEOUT * 1000);
+        // In LOBBY: remove player immediately (no reconnect grace period)
+        if (this.status === 'LOBBY') {
+            const seat = conn.player.seat;
+            this.removePlayer(playerId);
+            this.broadcast({
+                op: 'PLAYER_LEFT',
+                seat,
+                reason: 'disconnected',
+            });
+            return;
         }
+
+        // IN_GAME: allow reconnection window
+        conn.ws = null;
+        conn.player.connected = false;
+        conn.disconnectedAt = Date.now();
+
+        // Broadcast that player disconnected (so clients can show status)
+        this.broadcast({
+            op: 'PLAYER_LEFT',
+            seat: conn.player.seat,
+            reason: 'disconnected',
+        });
+
+        // If in voting phase, update vote status immediately
+        if (this.isVotingPhase) {
+            this.rematchVotes.delete(conn.player.seat);
+            this.broadcastVoteUpdate();
+            this.checkVoteResolution();
+        }
+
+        // If it's this player's turn, start the auto-drink timer
+        if (this.game && this.game.phase === 'TURNS' && this.game.turnSeat === conn.player.seat) {
+            this.setTurnDeadline();
+        }
+
+        // If they're the dealer during DEALER_SETUP, auto-assign cards
+        if (this.game && this.game.phase === 'DEALER_SETUP' && this.game.dealerSeat === conn.player.seat) {
+            this.handleDisconnectedDealerSetup();
+        }
+
+        // If they're the dealer during AWAITING_REVEAL, auto-trigger reveal
+        if (this.game && this.game.phase === 'AWAITING_REVEAL' && this.game.dealerSeat === conn.player.seat) {
+            this.startRevealSequence();
+        }
+
+        // Schedule timeout check for in-game disconnects
+        setTimeout(() => {
+            this.checkDisconnectTimeout(playerId);
+        }, RECONNECT_TIMEOUT * 1000);
     }
 
     private checkDisconnectTimeout(playerId: string): void {
@@ -214,6 +257,19 @@ export class Room {
         return false;
     }
 
+    /**
+     * Find an existing player by their sessionId.
+     * Returns playerId and token if found.
+     */
+    public findPlayerBySessionId(sessionId: string): { playerId: string; token: string; connected: boolean } | null {
+        for (const [playerId, conn] of this.players) {
+            if (conn.sessionId === sessionId) {
+                return { playerId, token: conn.token, connected: conn.player.connected };
+            }
+        }
+        return null;
+    }
+
     // ==========================================
     // Game Flow
     // ==========================================
@@ -260,6 +316,38 @@ export class Room {
 
         // Wait for dealer to assign cards
         this.broadcastPhase();
+    }
+
+    /**
+     * Handle disconnected dealer during DEALER_SETUP.
+     * Auto-assigns cards randomly with valid composition.
+     */
+    private handleDisconnectedDealerSetup(): void {
+        if (!this.game || this.game.phase !== 'DEALER_SETUP') return;
+
+        const aliveSeats = this.getAliveSeats();
+        const n = aliveSeats.length;
+
+        if (n < 2) {
+            this.endGame();
+            return;
+        }
+
+        // Create random but valid assignment: at least 1 SAFE and 1 DOOM
+        const assignments: Record<number, 'SAFE' | 'DOOM'> = {};
+
+        // Guarantee at least 1 DOOM and 1 SAFE
+        const shuffledSeats = this.shuffle([...aliveSeats]);
+        assignments[shuffledSeats[0]] = 'DOOM';
+        assignments[shuffledSeats[1]] = 'SAFE';
+
+        // Randomly assign the rest
+        for (let i = 2; i < shuffledSeats.length; i++) {
+            assignments[shuffledSeats[i]] = Math.random() < 0.5 ? 'SAFE' : 'DOOM';
+        }
+
+        // Apply the auto-assignment using existing logic
+        this.handleDealerSet(this.game.dealerSeat, assignments);
     }
 
     // DEALER MODE: Accept card assignments from dealer
@@ -391,13 +479,23 @@ export class Room {
 
         this.clearTimers();
 
-        // Timer disabled for now
-        // const deadline = Date.now() + this.settings.turnTimer * 1000;
-        // this.game.deadlineTs = deadline;
-        //
-        // this.turnTimer = setTimeout(() => {
-        //     this.handleTurnTimeout();
-        // }, this.settings.turnTimer * 1000);
+        const turnPlayerId = this.seatToPlayerId.get(this.game.turnSeat);
+        if (!turnPlayerId) return;
+
+        const conn = this.players.get(turnPlayerId);
+        if (!conn) return;
+
+        // Use shorter timeout for disconnected players, normal timer for connected
+        const timeoutSeconds = conn.player.connected
+            ? this.settings.turnTimer
+            : DISCONNECTED_TURN_TIMEOUT;
+
+        const deadline = Date.now() + timeoutSeconds * 1000;
+        this.game.deadlineTs = deadline;
+
+        this.turnTimer = setTimeout(() => {
+            this.handleTurnTimeout();
+        }, timeoutSeconds * 1000);
     }
 
     private handleTurnTimeout(): void {

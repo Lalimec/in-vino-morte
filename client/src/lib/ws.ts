@@ -1,6 +1,7 @@
 import { CLIENT_OPS, SERVER_OPS } from '@in-vino-morte/shared';
 import { ServerMessageSchema } from '@in-vino-morte/shared';
 import { useGameStore } from '@/stores/gameStore';
+import { getWebSocketUrl } from '@/lib/config';
 
 type MessageHandler = (message: Record<string, unknown>) => void;
 
@@ -152,6 +153,11 @@ class WebSocketClient {
                 case SERVER_OPS.PLAYER_LEFT:
                     store.handlePlayerLeft(message.seat, message.reason);
                     this.emit('playerLeft', { seat: message.seat, reason: message.reason });
+                    break;
+
+                case SERVER_OPS.PLAYER_RECONNECTED:
+                    store.handlePlayerReconnected(message.seat);
+                    this.emit('playerReconnected', { seat: message.seat });
                     break;
             }
         } catch (error) {
@@ -331,22 +337,6 @@ class WebSocketClient {
 
 // Singleton instance
 let wsClient: WebSocketClient | null = null;
-
-function getWebSocketUrl(): string {
-    // SSR/build time fallback (not actually used at runtime)
-    if (typeof window === 'undefined') {
-        return 'ws://localhost:3001';
-    }
-
-    // Development: localhost
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return 'ws://localhost:3001';
-    }
-
-    // Production: derive from current page URL
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${window.location.host}/ws`;
-}
 
 export function getWsClient(): WebSocketClient {
     if (!wsClient) {

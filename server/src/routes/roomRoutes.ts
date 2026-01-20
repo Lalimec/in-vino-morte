@@ -22,8 +22,8 @@ export function createRoomRoutes(roomManager: RoomManager): Router {
                 return;
             }
 
-            const { hostName, avatarId } = parsed.data;
-            const { room, token } = roomManager.createRoom(hostName, avatarId);
+            const { hostName, avatarId, sessionId } = parsed.data;
+            const { room, token } = roomManager.createRoom(hostName, avatarId, sessionId);
 
             res.json({
                 roomId: room.id,
@@ -45,8 +45,8 @@ export function createRoomRoutes(roomManager: RoomManager): Router {
                 return;
             }
 
-            const { joinCode, name, avatarId } = parsed.data;
-            const result = roomManager.joinRoom(joinCode, name, avatarId);
+            const { joinCode, name, avatarId, sessionId } = parsed.data;
+            const result = roomManager.joinRoom(joinCode, name, avatarId, sessionId);
 
             if ('error' in result) {
                 const statusCodes: Record<string, number> = {
@@ -54,6 +54,7 @@ export function createRoomRoutes(roomManager: RoomManager): Router {
                     'NAME_TAKEN': 409,
                     'ROOM_FULL': 409,
                     'GAME_IN_PROGRESS': 409,
+                    'SESSION_ALREADY_IN_ROOM': 409,
                 };
                 res.status(statusCodes[result.error] || 400).json({ error: result.error });
                 return;

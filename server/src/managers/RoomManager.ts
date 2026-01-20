@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Room } from '../room';
+import { Room } from '../Room';
 import { JOIN_CODE_LENGTH, JOIN_CODE_CHARS } from '@in-vino-morte/shared';
 
 /**
@@ -15,7 +15,7 @@ export class RoomManager {
     private rooms: Map<string, Room> = new Map();
     private roomsByCode: Map<string, string> = new Map(); // joinCode -> roomId
     private playerToRoom: Map<string, string> = new Map(); // playerId -> roomId
-    private tokenToPlayer: Map<string, { playerId: string; roomId: string }> = new Map();
+    private tokenToPlayer: Map<string, { playerId: string; roomId: string; sessionId: string }> = new Map();
 
     /**
      * Generate a unique join code for a new room.
@@ -37,7 +37,7 @@ export class RoomManager {
     /**
      * Create a new room with the given host.
      */
-    public createRoom(hostName: string, avatarId: number): { room: Room; token: string; playerId: string } {
+    public createRoom(hostName: string, avatarId: number, sessionId: string): { room: Room; token: string; playerId: string } {
         const joinCode = this.generateJoinCode();
         const playerId = uuidv4();
         const token = uuidv4();
@@ -47,15 +47,18 @@ export class RoomManager {
         this.rooms.set(room.id, room);
         this.roomsByCode.set(joinCode, room.id);
         this.playerToRoom.set(playerId, room.id);
-        this.tokenToPlayer.set(token, { playerId, roomId: room.id });
+        this.tokenToPlayer.set(token, { playerId, roomId: room.id, sessionId });
 
         return { room, token, playerId };
     }
 
     /**
      * Join an existing room with a join code.
+     * If the same sessionId already exists in the room:
+     * - If connected: reject (can't have duplicate tabs)
+     * - If disconnected: return existing token for reconnection
      */
-    public joinRoom(joinCode: string, name: string, avatarId: number): { room: Room; token: string; playerId: string } | { error: string } {
+    public joinRoom(joinCode: string, name: string, avatarId: number, sessionId: string): { room: Room; token: string; playerId: string; isReconnect?: boolean } | { error: string } {
         const roomId = this.roomsByCode.get(joinCode.toUpperCase());
         if (!roomId) {
             return { error: 'ROOM_NOT_FOUND' };
@@ -64,6 +67,23 @@ export class RoomManager {
         const room = this.rooms.get(roomId);
         if (!room) {
             return { error: 'ROOM_NOT_FOUND' };
+        }
+
+        // Check if this sessionId already has a player in this room
+        const existingPlayer = room.findPlayerBySessionId(sessionId);
+        if (existingPlayer) {
+            if (existingPlayer.connected) {
+                // Already in room with an active connection - reject
+                return { error: 'SESSION_ALREADY_IN_ROOM' };
+            } else {
+                // Disconnected player - allow reconnection with existing token
+                return {
+                    room,
+                    token: existingPlayer.token,
+                    playerId: existingPlayer.playerId,
+                    isReconnect: true,
+                };
+            }
         }
 
         // Check for duplicate names before creating token
@@ -85,7 +105,7 @@ export class RoomManager {
         const token = uuidv4();
 
         this.playerToRoom.set(playerId, room.id);
-        this.tokenToPlayer.set(token, { playerId, roomId: room.id });
+        this.tokenToPlayer.set(token, { playerId, roomId: room.id, sessionId });
 
         return { room, token, playerId };
     }
@@ -116,8 +136,23 @@ export class RoomManager {
     /**
      * Get player/room info from a token.
      */
-    public getTokenInfo(token: string): { playerId: string; roomId: string } | undefined {
+    public getTokenInfo(token: string): { playerId: string; roomId: string; sessionId: string } | undefined {
         return this.tokenToPlayer.get(token);
+    }
+
+    /**
+     * Remove a player's token and mapping when they leave.
+     */
+    public removePlayerToken(playerId: string): void {
+        this.playerToRoom.delete(playerId);
+
+        // Find and remove the token for this player
+        for (const [token, info] of this.tokenToPlayer) {
+            if (info.playerId === playerId) {
+                this.tokenToPlayer.delete(token);
+                break;
+            }
+        }
     }
 
     /**
@@ -126,6 +161,14 @@ export class RoomManager {
     public removeRoom(roomId: string): void {
         const room = this.rooms.get(roomId);
         if (room) {
+            // Clean up all tokens for players in this room
+            for (const [token, info] of this.tokenToPlayer) {
+                if (info.roomId === roomId) {
+                    this.tokenToPlayer.delete(token);
+                    this.playerToRoom.delete(info.playerId);
+                }
+            }
+
             this.roomsByCode.delete(room.joinCode);
             this.rooms.delete(roomId);
         }
