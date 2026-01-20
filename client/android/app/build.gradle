@@ -1,4 +1,15 @@
+import groovy.json.JsonSlurper
+
 apply plugin: 'com.android.application'
+
+// Read version from package.json
+def packageJson = new JsonSlurper().parseText(file('../../package.json').text)
+def appVersionName = packageJson.version
+// Convert version string to versionCode: "1.2.3" -> 10203
+def versionParts = appVersionName.split('\\.')
+def appVersionCode = (versionParts[0].toInteger() * 10000) +
+                     (versionParts.size() > 1 ? versionParts[1].toInteger() * 100 : 0) +
+                     (versionParts.size() > 2 ? versionParts[2].toInteger() : 0)
 
 android {
     namespace = "com.invinomorte.app"
@@ -7,8 +18,8 @@ android {
         applicationId "com.invinomorte.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
