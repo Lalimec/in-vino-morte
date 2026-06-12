@@ -124,9 +124,16 @@ export class Room {
         return { success: false, error: 'INVALID_TOKEN' };
     }
 
-    public disconnectPlayer(playerId: string): void {
+    public disconnectPlayer(playerId: string, closingWs?: WebSocket): void {
         const conn = this.players.get(playerId);
         if (!conn) return;
+
+        // Ignore stale socket closes. If this close event belongs to an old
+        // socket that has already been replaced by a reconnect (conn.ws now
+        // points at a different, live socket), do nothing - otherwise we would
+        // mark a healthy reconnected player as disconnected and null out their
+        // socket, freezing them out of all broadcasts.
+        if (closingWs && conn.ws && conn.ws !== closingWs) return;
 
         // In LOBBY: remove player immediately (no reconnect grace period)
         if (this.status === 'LOBBY') {
@@ -1086,6 +1093,11 @@ export class Room {
             turnSeat: this.game.turnSeat,
             deadlineTs: this.game.deadlineTs,
             aliveSeats: this.game.aliveSeats,
+            // Authoritative table state so clients re-sync on every phase change
+            // instead of drifting from missed incremental events.
+            facedownSeats: this.game.facedownSeats,
+            actedSeats: this.game.actedSeats,
+            cheeseSeats: this.game.cheeseSeats,
         });
     }
 

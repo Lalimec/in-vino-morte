@@ -14,6 +14,12 @@ interface LightPillarProps {
   noiseIntensity?: number;
   mixBlendMode?: React.CSSProperties['mixBlendMode'];
   pillarRotation?: number;
+  /**
+   * When false, render a single static frame and stop — no requestAnimationFrame
+   * loop. Preserves the exact organic shape of the shader with a one-time render
+   * cost instead of melting the GPU at 60fps. Used on mobile / reduced-motion.
+   */
+  animated?: boolean;
 }
 
 const LightPillar: React.FC<LightPillarProps> = ({
@@ -28,7 +34,8 @@ const LightPillar: React.FC<LightPillarProps> = ({
   pillarHeight = 0.4,
   noiseIntensity = 0.5,
   mixBlendMode = 'screen',
-  pillarRotation = 0
+  pillarRotation = 0,
+  animated = true
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -81,7 +88,10 @@ const LightPillar: React.FC<LightPillarProps> = ({
     }
 
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Cap resolution lower for the static single-frame render: it's a soft glow,
+    // so a slightly lower-res frame is visually fine and keeps the one-time cost
+    // (especially on weak mobile GPUs) small.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, animated ? 2 : 1));
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -287,7 +297,14 @@ const LightPillar: React.FC<LightPillarProps> = ({
 
       rafRef.current = requestAnimationFrame(animate);
     };
-    rafRef.current = requestAnimationFrame(animate);
+
+    if (animated) {
+      rafRef.current = requestAnimationFrame(animate);
+    } else {
+      // Static mode: render a single frame and stop. Same organic shape, no loop.
+      material.uniforms.uTime.value = timeRef.current;
+      renderer.render(scene, camera);
+    }
 
     // Handle resize with debouncing
     let resizeTimeout: number | null = null;
@@ -348,18 +365,13 @@ const LightPillar: React.FC<LightPillarProps> = ({
     pillarHeight,
     noiseIntensity,
     pillarRotation,
-    webGLSupported
+    webGLSupported,
+    animated
   ]);
 
   if (!webGLSupported) {
-    return (
-      <div
-        className={`w-full h-full absolute top-0 left-0 flex items-center justify-center bg-black/10 text-gray-500 text-sm ${className}`}
-        style={{ mixBlendMode }}
-      >
-        WebGL not supported
-      </div>
-    );
+    // Render nothing - the gradient fallback behind us (in WineBackground) shows through.
+    return null;
   }
 
   return (

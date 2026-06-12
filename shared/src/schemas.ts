@@ -165,6 +165,13 @@ export const PhaseMessageSchema = z.object({
     turnSeat: z.number(),
     deadlineTs: z.number().nullable(),
     aliveSeats: z.array(z.number()), // Include alive seats for game restart sync
+    // Authoritative table state on every phase change. Without these, clients
+    // reconstruct facedown/acted/cheese purely from incremental events and
+    // permanently desync if any single event is missed. Optional for backward
+    // compatibility with older clients during a rolling deploy.
+    facedownSeats: z.array(z.number()).optional(),
+    actedSeats: z.array(z.number()).optional(),
+    cheeseSeats: z.array(z.number()).optional(),
 });
 
 export const DealtMessageSchema = z.object({

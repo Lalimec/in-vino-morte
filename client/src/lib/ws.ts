@@ -9,19 +9,70 @@ class WebSocketClient {
     private ws: WebSocket | null = null;
     private url: string;
     private reconnectAttempts = 0;
-    private maxReconnectAttempts = 5;
     private reconnectDelay = 1000;
+    private maxReconnectDelay = 5000;
+    private intentionallyClosed = false;
+    private networkListenersAdded = false;
     private pingInterval: NodeJS.Timeout | null = null;
     private messageHandlers: Map<string, MessageHandler[]> = new Map();
 
     constructor(url: string) {
         this.url = url;
+        this.setupNetworkListeners();
+    }
+
+    /**
+     * Resolve the reconnect token: prefer the in-memory store, fall back to the
+     * persisted copy (survives a webview reload).
+     */
+    private getToken(): string | null {
+        const storeToken = useGameStore.getState().token;
+        if (storeToken) return storeToken;
+        if (typeof window !== 'undefined') {
+            try { return window.localStorage.getItem('authToken'); } catch { /* ignore */ }
+        }
+        return null;
+    }
+
+    /**
+     * Re-join the room after a (re)connect, using whatever identity we have.
+     */
+    private rejoin(): void {
+        const store = useGameStore.getState();
+        const token = this.getToken();
+        if (token && store.playerName) {
+            this.join(token, store.playerName, store.avatarId);
+        }
+    }
+
+    /**
+     * Reconnect immediately if we're not already connected. Called when the
+     * network comes back or the app returns to the foreground - critical on
+     * mobile, where the OS freezes the webview while backgrounded.
+     */
+    private ensureConnected(): void {
+        if (this.intentionallyClosed) return;
+        const live = this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING);
+        if (live) return;
+        this.reconnectAttempts = 0; // fresh budget on an explicit resume
+        this.connect().then(() => this.rejoin()).catch(() => { /* onclose will retry */ });
+    }
+
+    private setupNetworkListeners(): void {
+        if (typeof window === 'undefined' || this.networkListenersAdded) return;
+        this.networkListenersAdded = true;
+
+        window.addEventListener('online', () => this.ensureConnected());
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') this.ensureConnected();
+        });
     }
 
     public connect(): Promise<void> {
         return new Promise((resolve, reject) => {
             const store = useGameStore.getState();
             store.setConnecting(true);
+            this.intentionallyClosed = false;
 
             try {
                 this.ws = new WebSocket(this.url);
@@ -89,7 +140,7 @@ class WebSocketClient {
                     break;
 
                 case SERVER_OPS.PHASE:
-                    store.updatePhase(message.phase, message.dealerSeat, message.turnSeat, message.deadlineTs, message.aliveSeats);
+                    store.updatePhase(message.phase, message.dealerSeat, message.turnSeat, message.deadlineTs, message.aliveSeats, message.facedownSeats, message.actedSeats, message.cheeseSeats);
                     break;
 
                 case SERVER_OPS.DEALT:
@@ -263,6 +314,7 @@ class WebSocketClient {
     }
 
     public disconnect(): void {
+        this.intentionallyClosed = true;
         this.stopPing();
         if (this.ws) {
             this.ws.close(1000);
@@ -287,25 +339,28 @@ class WebSocketClient {
     }
 
     private attemptReconnect(): void {
-        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            console.log('Max reconnect attempts reached');
-            useGameStore.getState().setConnectionError('Connection lost');
-            return;
-        }
+        // Never give up while the app is open: party players background their
+        // phones for minutes. Retry forever with exponential backoff capped at
+        // maxReconnectDelay; the 'online' / 'visibilitychange' listeners also
+        // trigger an immediate reconnect when the device wakes up.
+        if (this.intentionallyClosed) return;
 
         this.reconnectAttempts++;
-        const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+        const delay = Math.min(
+            this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
+            this.maxReconnectDelay
+        );
 
         console.log(`Attempting reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
 
         setTimeout(() => {
-            this.connect().then(() => {
-                // Re-join room if we have a token
-                const store = useGameStore.getState();
-                if (store.token && store.playerName) {
-                    this.join(store.token, store.playerName, store.avatarId);
-                }
-            }).catch(console.error);
+            // Bail if something already reconnected us in the meantime.
+            if (this.intentionallyClosed) return;
+            if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) return;
+
+            this.connect()
+                .then(() => this.rejoin())
+                .catch(() => { /* onclose schedules the next attempt */ });
         }, delay);
     }
 

@@ -59,7 +59,9 @@ wss.on('connection', (ws: WebSocket) => {
             if (room) {
                 // Check if in lobby before disconnect (player will be removed immediately)
                 const wasInLobby = !room.isInGame();
-                room.disconnectPlayer(info.playerId);
+                // Pass the closing socket so the room can ignore stale closes
+                // from a connection that was already replaced by a reconnect.
+                room.disconnectPlayer(info.playerId, ws);
 
                 // Clean up token if player was removed from lobby
                 if (wasInLobby) {

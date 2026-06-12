@@ -85,6 +85,26 @@ export function isMobileApp(): boolean {
 }
 
 /**
+ * Whether to render the lightweight static background instead of the WebGL
+ * raymarch shader. The shader is far too GPU-heavy for phones (it raymarches
+ * 100 steps per pixel every frame), causing jank, battery drain and thermal
+ * throttling. We fall back to a static gradient on:
+ *   - Capacitor native apps (iOS/Android),
+ *   - touch / coarse-pointer browsers (phones, most tablets),
+ *   - users who prefer reduced motion.
+ *
+ * Returns true on the server and the first client paint so we never flash the
+ * heavy shader before we've detected the device.
+ */
+export function shouldUseStaticBackground(): boolean {
+    if (typeof window === 'undefined') return true; // SSR: cheap, safe default
+    if (isCapacitor()) return true;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return true;
+    if (window.matchMedia?.('(pointer: coarse)')?.matches) return true;
+    return false;
+}
+
+/**
  * Get the current platform
  */
 export function getPlatform(): 'ios' | 'android' | 'web' {

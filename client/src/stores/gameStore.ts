@@ -46,7 +46,7 @@ interface GameStore {
     setConnectionError: (error: string | null) => void;
     setFullState: (state: FullState) => void;
     updateLobby: (players: Player[], settings: RoomSettings) => void;
-    updatePhase: (phase: GameState['phase'], dealerSeat: number, turnSeat: number, deadlineTs: number | null, aliveSeats: number[]) => void;
+    updatePhase: (phase: GameState['phase'], dealerSeat: number, turnSeat: number, deadlineTs: number | null, aliveSeats: number[], facedownSeats?: number[], actedSeats?: number[], cheeseSeats?: number[]) => void;
     addReveal: (seat: number, cardType: 'SAFE' | 'DOOM') => void;
     consumeReveal: () => { seat: number; cardType: 'SAFE' | 'DOOM' } | undefined;
     addElimination: (seat: number) => void;
@@ -134,41 +134,60 @@ export const useGameStore = create<GameStore>((set, get) => ({
         requiredVotes: 0,
     }),
 
-    updatePhase: (phase, dealerSeat, turnSeat, deadlineTs, aliveSeats) => set((state) => ({
-        // When we receive a game phase (not LOBBY), we're IN_GAME
-        roomStatus: phase !== 'LOBBY' ? 'IN_GAME' : state.roomStatus,
-        // Update players' alive status based on aliveSeats from server
-        players: state.players.map(p => ({
-            ...p,
-            alive: aliveSeats.includes(p.seat),
-        })),
-        game: state.game ? {
-            ...state.game,
-            phase,
-            dealerSeat,
-            turnSeat,
-            deadlineTs,
-            aliveSeats, // Update from server
-        } : {
-            // Initialize game state if it doesn't exist yet
-            phase,
-            dealerSeat,
-            turnSeat,
-            roundIndex: 0,
-            aliveSeats,
-            facedownSeats: [],
-            actedSeats: [],
-            deadlineTs,
-            cheeseSeats: [],
-        },
-        // Clear pending queues when starting a new round (DEALER_SETUP)
-        // This prevents stale animations from previous round corrupting state
-        ...(phase === 'DEALER_SETUP' ? {
-            pendingReveals: [],
-            pendingEliminations: [],
-            pendingSwaps: [],
-        } : {}),
-    })),
+    updatePhase: (phase, dealerSeat, turnSeat, deadlineTs, aliveSeats, facedownSeats, actedSeats, cheeseSeats) => set((state) => {
+        // Keep seats that are mid-reveal/elimination animation visually alive
+        // until their animation completes (consumeElimination). The server's
+        // aliveSeats already excludes a player the instant they reveal DOOM, but
+        // we want the reveal to play out before they drop - so don't let PHASE
+        // kill them ahead of the animation.
+        const pendingSeats = new Set<number>([
+            ...state.pendingReveals.map(r => r.seat),
+            ...state.pendingEliminations,
+        ]);
+
+        return {
+            // When we receive a game phase (not LOBBY), we're IN_GAME
+            roomStatus: phase !== 'LOBBY' ? 'IN_GAME' : state.roomStatus,
+            // Update players' alive status based on aliveSeats from server,
+            // preserving any seat still being animated.
+            players: state.players.map(p => ({
+                ...p,
+                alive: aliveSeats.includes(p.seat) || pendingSeats.has(p.seat),
+                // cheeseSeats is authoritative when present
+                ...(cheeseSeats !== undefined ? { hasCheese: cheeseSeats.includes(p.seat) } : {}),
+            })),
+            game: state.game ? {
+                ...state.game,
+                phase,
+                dealerSeat,
+                turnSeat,
+                deadlineTs,
+                aliveSeats, // Update from server
+                // Authoritative table state when the server sends it
+                ...(facedownSeats !== undefined ? { facedownSeats } : {}),
+                ...(actedSeats !== undefined ? { actedSeats } : {}),
+                ...(cheeseSeats !== undefined ? { cheeseSeats } : {}),
+            } : {
+                // Initialize game state if it doesn't exist yet
+                phase,
+                dealerSeat,
+                turnSeat,
+                roundIndex: 0,
+                aliveSeats,
+                facedownSeats: facedownSeats ?? [],
+                actedSeats: actedSeats ?? [],
+                deadlineTs,
+                cheeseSeats: cheeseSeats ?? [],
+            },
+            // Clear pending queues when starting a new round (DEALER_SETUP)
+            // This prevents stale animations from previous round corrupting state
+            ...(phase === 'DEALER_SETUP' ? {
+                pendingReveals: [],
+                pendingEliminations: [],
+                pendingSwaps: [],
+            } : {}),
+        };
+    }),
 
     addReveal: (seat, cardType) => set((state) => ({
         pendingReveals: [...state.pendingReveals, { seat, cardType }],
@@ -283,7 +302,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     setPlayerInfo: (playerName, avatarId) => set({ playerName, avatarId }),
-    setToken: (token) => set({ token }),
+    setToken: (token) => {
+        // Persist the reconnect token so it survives a webview reload (iOS can
+        // reload the webview under memory pressure mid-game). ws reconnect reads
+        // store.token, which is rehydrated from here on mount.
+        if (typeof window !== 'undefined') {
+            try { window.localStorage.setItem('authToken', token); } catch { /* ignore */ }
+        }
+        set({ token });
+    },
     setRoomInfo: (roomId, joinCode) => set({ roomId, joinCode }),
 
     toggleSound: () => set((state) => ({ soundEnabled: !state.soundEnabled })),
@@ -321,5 +348,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ),
     })),
 
-    reset: () => set(initialState),
+    reset: () => {
+        // Clear the persisted reconnect token: reset() means we've intentionally
+        // left the room, so the token must not linger for a stale reconnect.
+        if (typeof window !== 'undefined') {
+            try { window.localStorage.removeItem('authToken'); } catch { /* ignore */ }
+        }
+        set(initialState);
+    },
 }));

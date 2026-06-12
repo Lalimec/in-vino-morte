@@ -177,9 +177,16 @@ export default function GameClient() {
 
     // Redirect effects
     useEffect(() => {
-        if (!isConnected) {
-            const timer = setTimeout(() => useGameStore.getState().reset(), 100);
-            if (roomStatus !== 'IN_GAME') router.push('/');
+        // Only bail to the home screen when we're disconnected AND not in an
+        // active game. During a game we MUST keep the store intact (especially
+        // the token) so the socket can auto-reconnect - resetting here would
+        // wipe the token and make reconnection impossible, dropping the player
+        // permanently on every transient network blip.
+        if (!isConnected && roomStatus !== 'IN_GAME') {
+            const timer = setTimeout(() => {
+                useGameStore.getState().reset();
+                router.push('/');
+            }, 100);
             return () => clearTimeout(timer);
         }
     }, [isConnected, router, roomStatus]);
